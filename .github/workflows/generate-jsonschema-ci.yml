@@ -1,0 +1,88 @@
+name: Generate JSON Schema CI
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - generate-jsonschema/**
+      - .github/workflows/generate-jsonschema-ci.yml
+      - .github/workflows/python-tests.yml
+  push:
+    branches:
+      - main
+    paths:
+      - generate-jsonschema/**
+      - .github/workflows/generate-jsonschema-ci.yml
+      - .github/workflows/python-tests.yml
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: generate-jsonschema
+
+jobs:
+  test:
+    name: Tests
+    uses: ./.github/workflows/python-tests.yml
+    with:
+      action-directory: generate-jsonschema
+      # Must match the Python version in the Dockerfile base image.
+      python-version: "3.15"
+      synapseclient-extras: pandas,curator
+      test-path: test
+
+  docker-build:
+    name: Docker Build Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Docker Build
+        id: setup-build
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build the Container
+        id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: generate-jsonschema
+          push: false
+          tags: generate-jsonschema-action:test
+
+  test-action:
+    name: GitHub Actions Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Test Local Action
+        id: generate
+        uses: ./generate-jsonschema
+        with:
+          data-model-source: ./generate-jsonschema/test/data_model.csv
+          data-model-labels: "display_label"
+          data-types: "Datatype1,Datatype2"
+          output-directory: "test-schemas"
+
+      # The schemas output is relative to the workspace, and run steps use
+      # working-directory generate-jsonschema, so add $GITHUB_WORKSPACE.
+      - name: Check Generated Schemas
+        env:
+          SCHEMAS_DIR: ${{ steps.generate.outputs.schemas }}
+        run: |
+          COUNT=$(find "$GITHUB_WORKSPACE/$SCHEMAS_DIR" -maxdepth 1 \
+            -name '*.json' | wc -l)
+          echo "Generated schema files: $COUNT"
+          if [ "$COUNT" -ne 2 ]; then
+            echo "::error::Expected 2 schema files, got $COUNT"
+            exit 1
+          fi

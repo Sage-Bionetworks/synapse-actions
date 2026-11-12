@@ -21,6 +21,13 @@ on:
 permissions:
   contents: read
 
+# The jobs register schemas in the shared Synapse org dpetest. Do not let two
+# runs do this at the same time. A new run waits, and does not cancel the run
+# that is in progress.
+concurrency:
+  group: register-jsonschema-dpetest
+  cancel-in-progress: false
+
 defaults:
   run:
     working-directory: register-jsonschema
@@ -84,6 +91,7 @@ jobs:
   test-action:
     name: GitHub Actions Test
     runs-on: ubuntu-latest
+    needs: test-docker
 
     steps:
       - name: Checkout
@@ -106,6 +114,7 @@ jobs:
   test-workflow:
     name: GitHub Workflow Test
     runs-on: ubuntu-latest
+    needs: test-action
 
     steps:
       - name: Checkout

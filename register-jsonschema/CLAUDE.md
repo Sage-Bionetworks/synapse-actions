@@ -127,6 +127,11 @@ workflow with `uses: ./generate-jsonschema` followed by
   and `_` names for `FIX_SCHEMA_NAME`), `non_schema_dir` (not JSON),
   `malformed_schema_dir` (JSON that Synapse rejects). `data_model.csv` is the
   input for the CI `generate-jsonschema` job, not for pytest.
+- `tests/check_uris.sh` is for CI, not for pytest. The `test-action` and
+  `test-workflow` jobs call it with the expected URI count and the org. It reads
+  the `uris` output from the `URIS` env var. If you add or remove a fixture
+  schema or a data type in `data_model.csv`, change the count in
+  `register-jsonschema-ci.yml`.
 
 ## Related Systems
 

@@ -98,6 +98,10 @@ jobs:
           schema-dir: register-jsonschema/tests/schema_dir
           synapse-auth-token: ${{ secrets.SYNAPSE_AUTH_TOKEN }}
 
+      - name: Check Registered URIs
+        env:
+          URIS: ${{ steps.register.outputs.uris }}
+        run: ./tests/check_uris.sh 2 dpetest
 
   test-workflow:
     name: GitHub Workflow Test
@@ -123,3 +127,8 @@ jobs:
           fix-schema-name: "true"
           schema-dir: ${{ steps.generate.outputs.schemas }}
           synapse-auth-token: ${{ secrets.SYNAPSE_AUTH_TOKEN }}
+
+      - name: Check Registered URIs
+        env:
+          URIS: ${{ steps.register.outputs.uris }}
+        run: ./tests/check_uris.sh 3 dpetest

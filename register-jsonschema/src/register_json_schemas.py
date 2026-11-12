@@ -167,9 +167,11 @@ def register_schema(
     org_name: str,
     version: str | None,
     fix_schema_name: bool = False,
-) -> JSONSchema:
+) -> JSONSchema | None:
     """
     Register a single JSON schema to Synapse.
+    A failure prints an error and does not stop the run, so main() can try the
+    other files, print the summary and write the output.
 
     Args:
         syn: Synapse client
@@ -180,7 +182,7 @@ def register_schema(
           requirements by replacing dashes and underscores with periods.
 
     Returns:
-        JSONSchema object if successful
+        JSONSchema object if successful, None if the registration failed
     """
 
     print(f"Processing: {json_file.name}")
@@ -205,7 +207,7 @@ def register_schema(
 
     except Exception as e:  # noqa: BLE001 # pylint: disable=broad-exception-caught
         print(f"::error:: {json_file}: Failed to register: {e!s}", file=sys.stderr)
-        sys.exit(1)
+        return None
 
 
 if __name__ == "__main__":

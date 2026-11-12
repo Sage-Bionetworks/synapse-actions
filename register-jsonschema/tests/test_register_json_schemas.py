@@ -20,6 +20,20 @@ from register_json_schemas import (  # noqa: E402 # pylint: disable=wrong-import
 TESTS_DIR = Path(__file__).parent
 
 
+def check_one_failure(stdout: str, github_output: str) -> None:
+    """
+    Check that main() printed the summary and wrote the output after a failure.
+
+    Args:
+        stdout: The captured stdout of main()
+        github_output: Path to the GITHUB_OUTPUT file
+    """
+    assert "Registration Summary" in stdout
+    assert "Total Processed: 1\nSuccessful: 0\nFailed: 1\n" in stdout
+    output = Path(github_output).read_text(encoding="utf-8")
+    assert output == "uris<<EOF\n\nEOF\n"
+
+
 @pytest.fixture(scope="module")
 def synapse_client() -> Synapse:
     """Create a Synapse client for testing."""
@@ -118,8 +132,8 @@ class TestRegisterJsonSchemas:
         captured = capsys.readouterr()
         assert "::error:: Organization not found: not_a_real_org" in captured.err
 
-    def test_non_json(self, monkeypatch, capsys) -> None:
-        """Integration test for registering JSON schemas from a directory."""
+    def test_non_json(self, monkeypatch, capsys, text_file_path: str) -> None:
+        """A file that is not JSON fails, and main() still prints the summary."""
         monkeypatch.setenv("SCHEMA_DIR", str(TESTS_DIR / "non_schema_dir"))
         with pytest.raises(SystemExit) as exc_info:
             main()
@@ -131,9 +145,10 @@ class TestRegisterJsonSchemas:
             f"::error:: {json_file}: Failed to register: "
             "Expecting value: line 1 column 1 (char 0)"
         ) in captured.err
+        check_one_failure(captured.out, text_file_path)
 
-    def test_malformed_json(self, monkeypatch, capsys) -> None:
-        """Integration test for registering JSON schemas from a directory."""
+    def test_malformed_json(self, monkeypatch, capsys, text_file_path: str) -> None:
+        """JSON that Synapse rejects fails, and main() still prints the summary."""
         monkeypatch.setenv("SCHEMA_DIR", str(TESTS_DIR / "malformed_schema_dir"))
         with pytest.raises(SystemExit) as exc_info:
             main()
@@ -145,6 +160,7 @@ class TestRegisterJsonSchemas:
             f"::error:: {json_file}: Failed to register: "
             "400 Client Error: JSON Element in Entity is Unsupported: non_keyword"
         ) in captured.err
+        check_one_failure(captured.out, text_file_path)
 
 
 class TestInputChecks:

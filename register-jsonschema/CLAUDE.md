@@ -86,13 +86,13 @@ workflow with `uses: ./generate-jsonschema` followed by
 ## Antipatterns — Do NOT
 
 - Do NOT expect a re-run with the same `VERSION` to pass. Synapse cannot
-  overwrite a registered schema version, and `register_schema` calls
-  `sys.exit(1)` on the first failure. A partial run leaves some schemas
-  registered and writes no `uris` output (DPE-1790).
-- Do NOT trust the failure counter or the "Registration Summary" in `main()` on
-  failure. `register_schema` exits before it returns `None`, so `failed_count`
-  stays 0 and the summary and `GITHUB_OUTPUT` write never run. If you change
-  this to "continue on error", update the tests that expect exit code 1.
+  overwrite a registered schema version, so each schema that registered before
+  fails on the re-run.
+- Do NOT call `sys.exit()` in `register_schema`. On failure it prints
+  `::error::` and returns `None`. `main()` then tries the other files, prints
+  the "Registration Summary", writes the `uris` of the schemas that registered
+  to `GITHUB_OUTPUT`, and exits with 1 if one or more files failed (DPE-1790).
+  `test_non_json` and `test_malformed_json` check the summary and the output.
 - Do NOT move `syn.login()` above the input checks (`ORG_NAME`, `SCHEMA_DIR`,
   directory exists, `*.json` files present). These checks run before the login,
   so a missing input gives its own error and not a login error. The

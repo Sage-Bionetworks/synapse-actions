@@ -46,8 +46,7 @@ jobs:
           path: ${{ steps.generate.outputs.schemas }}
 ```
 
-We recommend these triggers, so the action runs only when relevant files
-change:
+We recommend these triggers, so the action runs only when relevant files change:
 
 - **`types`**: `opened` validates schemas when a PR is created, `synchronize`
   validates them again on new commits, and `labeled` lets you start a run

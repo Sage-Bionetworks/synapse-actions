@@ -11,10 +11,10 @@ repos use the two actions together.
 
 ## Stack
 
-- Python and synapseclient (with curator extras), both from the base image
-  `ghcr.io/sage-bionetworks/synapsepythonclient:vX.Y.Z`. The `Dockerfile` `FROM`
-  tag sets the version.
-- pytest (tests only, from `requirements.txt`).
+- The base image `ghcr.io/sage-bionetworks/synapsepythonclient:vX.Y.Z` gives
+  Python and synapseclient with the curator extras. Its tag in the `FROM` line
+  of the `Dockerfile` is the version.
+- `requirements.txt` has only the test dependency, pytest.
 
 ## Commands
 

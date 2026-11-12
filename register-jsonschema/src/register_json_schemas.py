@@ -64,23 +64,8 @@ def main() -> int:
         print(f"::error:: No JSON files found in: {schema_path}", file=sys.stderr)
         return 1
 
-    syn = Synapse()
-    try:
-        # Give the token directly, because synapseclient reads ~/.synapseConfig
-        # before the SYNAPSE_AUTH_TOKEN env var
-        syn.login(authToken=synapse_pat)
-    except Exception as e:  # noqa: BLE001 # pylint: disable=broad-exception-caught
-        print("::error:: Synapse login failed", file=sys.stderr)
-        print(f"::error:: {e!s}", file=sys.stderr)
-        return 1
-
-    try:
-        org = Organization(name=org_name)
-        org.get(synapse_client=syn)
-        print(f"✓ Organization found: {org_name}\n")
-    except Exception as e:  # noqa: BLE001 # pylint: disable=broad-exception-caught
-        print(f"::error:: Organization not found: {org_name}", file=sys.stderr)
-        print(f"::error:: {e!s}", file=sys.stderr)
+    syn = connect_to_synapse(org_name, synapse_pat)
+    if syn is None:
         return 1
 
     print(f"Found {len(json_files)} JSON schema file(s)\n")
@@ -97,9 +82,41 @@ def main() -> int:
 
     print_summary(len(json_files), success_count, failed_count)
 
-    if failed_count > 0:
-        return 1
-    return 0
+    return 1 if failed_count > 0 else 0
+
+
+def connect_to_synapse(org_name: str, synapse_pat: str | None) -> Synapse | None:
+    """
+    Log in to Synapse and check that the organization exists.
+
+    Args:
+        org_name: Organization name
+        synapse_pat: Synapse Personal Access Token, if set
+
+    Returns:
+        The logged in Synapse client, or None if the login or the
+        organization check failed
+    """
+    syn = Synapse()
+    try:
+        # Give the token directly, because synapseclient reads ~/.synapseConfig
+        # before the SYNAPSE_AUTH_TOKEN env var
+        syn.login(authToken=synapse_pat)
+    except Exception as e:  # noqa: BLE001 # pylint: disable=broad-exception-caught
+        print("::error:: Synapse login failed", file=sys.stderr)
+        print(f"::error:: {e!s}", file=sys.stderr)
+        return None
+
+    try:
+        org = Organization(name=org_name)
+        org.get(synapse_client=syn)
+        print(f"✓ Organization found: {org_name}\n")
+    except Exception as e:  # noqa: BLE001 # pylint: disable=broad-exception-caught
+        print(f"::error:: Organization not found: {org_name}", file=sys.stderr)
+        print(f"::error:: {e!s}", file=sys.stderr)
+        return None
+
+    return syn
 
 
 def print_header(

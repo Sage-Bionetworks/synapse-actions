@@ -10,21 +10,21 @@ org="$2"
 count=0
 
 while IFS= read -r uri; do
-  if [ -z "$uri" ]; then
-    continue
-  fi
-  count=$((count + 1))
-  case "$uri" in
-  "$org"-*) echo "Registered: $uri" ;;
-  *)
-    echo "::error::URI '$uri' does not start with '$org-'"
-    exit 1
-    ;;
-  esac
+	if [ -z "$uri" ]; then
+		continue
+	fi
+	count=$((count + 1))
+	case "$uri" in
+	"$org"-*) echo "Registered: $uri" ;;
+	*)
+		echo "::error::URI '$uri' does not start with '$org-'"
+		exit 1
+		;;
+	esac
 done <<<"${URIS:-}"
 
 if [ "$count" -ne "$expected" ]; then
-  echo "::error::Expected $expected URIs, got $count"
-  exit 1
+	echo "::error::Expected $expected URIs, got $count"
+	exit 1
 fi
 echo "Found $count URIs"

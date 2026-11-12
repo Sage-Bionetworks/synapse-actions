@@ -16,12 +16,14 @@ inputs:
   version:
     description: 'Semantic version of the schemas being registered'
     required: false
+    default: ''
   synapse-auth-token:
     description: 'Synapse Personal Access Token with permissions to register schemas in the Synapse organization'
     required: true
   fix-schema-name:
-    description: 'If true, fixes the schema name to meet Synapse requirements by replacing dashes and underscores with periods. Defaults to False'
+    description: 'If true, fixes the schema name to meet Synapse requirements by replacing dashes and underscores with periods. Defaults to false'
     required: false
+    default: 'false'
 
 outputs:
   uris:

@@ -44,7 +44,10 @@ build, and a run of the local action (`uses: ./generate-jsonschema`) on
   source that starts with `http://`/`https://` has no file-exists check. An
   empty `DATA_MODEL_LABELS` value becomes `class_label`. Other values that are
   not `class_label` or `display_label` give `::error::` and return 1
-  (`test_main_invalid_labels`).
+  (`test_main_invalid_labels`). An empty `OUTPUT_DIRECTORY` value becomes
+  `schemas` (`test_main_with_empty_output_directory`). Use
+  `os.environ.get(KEY) or default` for these inputs, not
+  `os.environ.get(KEY, default)`, because `action.yml` always sets the env var.
 - **Outputs** go to `$GITHUB_OUTPUT`: `schemas` is a path relative to the
   workspace (`os.path.relpath` of `OUTPUT_DIRECTORY`), or the absolute path if
   `OUTPUT_DIRECTORY` is absolute. Do not write the container path

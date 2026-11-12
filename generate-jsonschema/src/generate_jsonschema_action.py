@@ -82,7 +82,8 @@ def main():
 
     # Create output directory relative to current working directory
     # This ensures it's created in the GitHub workspace where artifacts can be uploaded
-    output_dir_name = os.environ.get("OUTPUT_DIRECTORY", "schemas")
+    # An empty value (input set to '') uses the default
+    output_dir_name = os.environ.get("OUTPUT_DIRECTORY") or "schemas"
     output_dir = os.path.join(os.getcwd(), output_dir_name)
     os.makedirs(output_dir, exist_ok=True)
 

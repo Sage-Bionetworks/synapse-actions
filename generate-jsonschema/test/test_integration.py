@@ -162,6 +162,23 @@ def test_main_github_output_custom_directory(tmp_path, monkeypatch):
     assert str(tmp_path) not in content.splitlines()[0]
 
 
+def test_main_with_empty_output_directory(tmp_path: Path, monkeypatch):
+    """Test that an empty OUTPUT_DIRECTORY uses the default schemas directory."""
+    output_file = tmp_path / "github_output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output_file))
+    monkeypatch.setenv("OUTPUT_DIRECTORY", "")
+    monkeypatch.setenv("DATA_MODEL_SOURCE", str(DATA_MODEL_PATH))
+    monkeypatch.delenv("DATA_TYPES", raising=False)
+
+    res = main()
+
+    assert res == 0
+    assert "schemas=schemas\n" in output_file.read_text()
+    schema_count = len(list((tmp_path / "schemas").glob("*.json")))
+    assert schema_count == TOTAL_SCHEMAS_IN_TEST_MODEL
+    assert not list(tmp_path.glob("*.json")), "No schemas should be in the root"
+
+
 def test_main_with_output_directory(tmp_path: Path, monkeypatch):
     """Tests main function using a custom output directory."""
     output_dir = "output_dir"

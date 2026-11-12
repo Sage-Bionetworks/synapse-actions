@@ -151,6 +151,7 @@ inject code.
 - `class_label` (default): Uses standard attribute names as property keys
 - `display_label`: Uses display names if valid (no blacklisted characters like
   parentheses, periods, spaces, or hyphens)
+- Other values fail the action with an error.
 
 ## Outputs
 

@@ -42,8 +42,9 @@ build, and a run of the local action (`uses: ./generate-jsonschema`) on
   `None`. If it has only whitespace and commas, it becomes `[]`. synapseclient
   makes all types for the two values (`test_main_with_empty_data_type`). A
   source that starts with `http://`/`https://` has no file-exists check. An
-  invalid `DATA_MODEL_LABELS` value gives a warning and changes to
-  `class_label`. It does not fail.
+  empty `DATA_MODEL_LABELS` value becomes `class_label`. Other values that are
+  not `class_label` or `display_label` give `::error::` and return 1
+  (`test_main_invalid_labels`).
 - **Outputs** go to `$GITHUB_OUTPUT`: `schemas` is a path relative to the
   workspace (`os.path.relpath` of `OUTPUT_DIRECTORY`), or the absolute path if
   `OUTPUT_DIRECTORY` is absolute. Do not write the container path

@@ -115,7 +115,7 @@ def test_main_file_not_found(capsys, monkeypatch):
 
 
 def test_main_invalid_labels(capsys, monkeypatch):
-    """Test that main warns and defaults when DATA_MODEL_LABELS is invalid."""
+    """Test that main fails when DATA_MODEL_LABELS is invalid."""
 
     monkeypatch.setenv("DATA_MODEL_SOURCE", str(DATA_MODEL_PATH))
     monkeypatch.setenv("DATA_MODEL_LABELS", "invalid_label")
@@ -124,8 +124,8 @@ def test_main_invalid_labels(capsys, monkeypatch):
     res = main()
     captured = capsys.readouterr()
 
-    assert res == 0
-    assert "::warning::Invalid data_model_labels 'invalid_label'" in captured.out
+    assert res == 1
+    assert "::error::Invalid DATA_MODEL_LABELS 'invalid_label'" in captured.err
 
 
 def test_main_github_output(tmp_path, monkeypatch):

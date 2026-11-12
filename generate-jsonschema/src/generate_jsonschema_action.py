@@ -70,13 +70,15 @@ def main():
     )
 
     # Validate data_model_labels
-    data_model_labels = os.environ.get("DATA_MODEL_LABELS", "class_label")
+    # An empty value (input set to '') uses the default
+    data_model_labels = os.environ.get("DATA_MODEL_LABELS") or "class_label"
     if data_model_labels not in ["class_label", "display_label"]:
         print(
-            f"::warning::Invalid data_model_labels '{data_model_labels}', "
-            f"using 'class_label'"
+            f"::error::Invalid DATA_MODEL_LABELS '{data_model_labels}'. "
+            "Use 'class_label' or 'display_label'",
+            file=sys.stderr,
         )
-        data_model_labels = "class_label"
+        return 1
 
     # Create output directory relative to current working directory
     # This ensures it's created in the GitHub workspace where artifacts can be uploaded

@@ -37,6 +37,10 @@ the code.
   is 88. Keep each `assert` statement on one line of 88 characters or less,
   because the two formatters wrap long `assert` statements differently.
 - Keep the changes consistent with the patterns and style that exist.
+- In each test, write a `# GIVEN ...` comment before the setup, a `# WHEN I ...`
+  comment before the action, and a `# THEN ...` comment before the checks. Write
+  `# AND ...` for more conditions or checks. Call `main()` as `result = main()`
+  in the WHEN step, and put the `assert` statements in the THEN step.
 - Write comments that explain _why_, not _what_.
 - Keep functions small, and use names that tell their purpose.
 - Prefer the most maintainable approach, and do not repeat code. jscpd runs with

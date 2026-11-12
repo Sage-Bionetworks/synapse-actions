@@ -73,6 +73,10 @@ For tests, Docker build and Docker run of each action, see the module
     new tests have fixtures that are not valid or that repeat
 - Use repository-relative paths in workflow `with:` values, for example
   `data-model-source: ./generate-jsonschema/test/data_model.csv`.
+- Tests use GIVEN, WHEN and THEN sections. Start each section with a comment
+  (`# GIVEN ...`, `# WHEN I ...`, `# THEN ...`), and use `# AND ...` for more
+  conditions or checks. The call to `main()` goes in the WHEN section
+  (`result = main()`), and the `assert` statements go in the THEN section.
 
 ## Constraints
 

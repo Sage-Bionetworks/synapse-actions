@@ -12,8 +12,7 @@ generated schemas. ELITE and ADKP data-model repos use this action.
 
 - Python and synapseclient (with curator extras), both from the base image
   `ghcr.io/sage-bionetworks/synapsepythonclient:vX.Y.Z`. The `Dockerfile` `FROM`
-  tag sets the version. The `python-version` input of the `test` job in
-  `generate-jsonschema-ci.yml` must match the Python version in that image.
+  tag sets the version.
 - pytest, PyYAML (tests only, from `requirements.txt`)
 
 ## Commands
@@ -91,24 +90,9 @@ build, and a run of the local action (`uses: ./generate-jsonschema`) on
 
 ## Constraints
 
-- Keep the `Dockerfile` `FROM` tag as the only place that sets the synapseclient
-  version. Do not `pip install` synapseclient (or anything else) in the
-  `Dockerfile`. The base image has no pip, and Dependabot changes only the
-  `FROM` line. A second pin would silently downgrade the client after each
-  Dependabot update.
-- Keep the `FROM` line in the form
-  `ghcr.io/sage-bionetworks/synapsepythonclient:vX.Y.Z@sha256:<digest>`. The CI
-  step "Read base image from Dockerfile" in the reusable workflow
-  `python-tests.yml` fails on other forms. Update the tag and the digest
-  together.
-- Use only release image tags, not `develop-<sha>` tags. Dependabot cannot
-  follow develop tags, and because of this the action did not get the
-  conditional fixes in 4.12/4.14 (DPE-1851).
-- When the base image changes the Python version, update the `python-version`
-  input in `generate-jsonschema-ci.yml` by hand (Dependabot does not change it).
-  The CI step "Check Python version matches base image" fails until the two
-  values are the same. Do not write the current Python or synapseclient version
-  in this file. Refer to the `Dockerfile` `FROM` tag.
+- For the base image rules (`FROM` tag, digest, release tags, no `pip install`,
+  `python-version` in `generate-jsonschema-ci.yml`), see "Constraints" in the
+  root `CLAUDE.md`.
 - Create `Synapse()` with no login. Schema generation does not need auth, and
   the action has no token input (SYNPY-1762).
 

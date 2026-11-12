@@ -24,19 +24,31 @@ steps:
 
 ## Inputs
 
-| Input                | Description                                                                                                     | Required |
-| :------------------- | :-------------------------------------------------------------------------------------------------------------- | :------- |
-| `org-name`           | Name of the Synapse organization to register schemas in.                                                        | `true`   |
-| `schema-dir`         | Path to directory containing JSON schema files.                                                                 | `true`   |
-| `version`            | Semantic version of the schemas being registered.                                                               | `false`  |
-| `synapse-auth-token` | Synapse Personal Access Token with permissions to register schemas in the Synapse organization.                 | `true`   |
-| `fix-schema-name`    | If `true`, fixes the schema name to meet Synapse requirements by replacing dashes and underscores with periods. | `false`  |
+| Input                | Description                                                                                                     | Required | Default   |
+| :------------------- | :-------------------------------------------------------------------------------------------------------------- | :------- | :-------- |
+| `org-name`           | Name of the Synapse organization to register schemas in.                                                        | `true`   | -         |
+| `schema-dir`         | Path to directory containing JSON schema files.                                                                 | `true`   | -         |
+| `version`            | Semantic version of the schemas being registered. A leading `v` is removed (`v1.0.0` becomes `1.0.0`).          | `false`  | `''`      |
+| `synapse-auth-token` | Synapse Personal Access Token with permissions to register schemas in the Synapse organization.                 | `true`   | -         |
+| `fix-schema-name`    | If `true`, fixes the schema name to meet Synapse requirements by replacing dashes and underscores with periods. | `false`  | `'false'` |
 
 ## Outputs
 
-| Output | Description                 |
-| :----- | :-------------------------- |
-| `uris` | URIs of registered schemas. |
+| Output | Description                                       |
+| :----- | :------------------------------------------------ |
+| `uris` | URIs of registered schemas, one URI on each line. |
+
+## Failures
+
+The action tries to register each JSON file in `schema-dir`, also if a file
+before it fails. At the end, it prints a registration summary. If one or more
+files fail, the step fails, but the `uris` output still has the URIs of the
+schemas that registered. To use these URIs after a failure, set
+`continue-on-error: true` on the step, or use `if: always()` on the next step.
+
+Synapse cannot overwrite a schema version that is registered. Thus, if you run
+the action again with the same `version`, each schema that registered before
+fails.
 
 ## Example Workflow
 

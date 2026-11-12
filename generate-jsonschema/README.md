@@ -9,15 +9,6 @@ using the Synapse Python Client curator extension.
 This action is part of the DPE-1554 implementation for automated JSON Schema
 management in Synapse workflows.
 
-## Features
-
-- ✅ Generate JSON Schemas from CSV or JSONLD data models
-- ✅ Filter schemas by specific data types
-- ✅ Support for class_label and display_label modes
-- ✅ Output schemas as both files and JSON for downstream processing
-- ✅ Designed for CI/CD workflows and Pull Request validation
-- ✅ Uses official Synapse Python Client Docker image
-
 ## Usage
 
 ### Basic Example
@@ -27,11 +18,11 @@ name: Validate Data Model
 on:
   pull_request:
     types:
-      - opened
-      - synchronize
-      - labeled
+      - opened # When PR is first opened
+      - synchronize # When new commits are pushed
+      - labeled # When labels are added (optional - useful for manual triggers)
     branches:
-      - 'main'
+      - 'main' # Only for PRs targeting main branch
     paths:
       - 'models/**' # Only trigger when model files change
 
@@ -54,6 +45,16 @@ jobs:
           name: json-schemas
           path: ${{ steps.generate.outputs.schemas }}
 ```
+
+We recommend these triggers, so the action runs only when relevant files
+change:
+
+- **`types`**: `opened` validates schemas when a PR is created, `synchronize`
+  validates them again on new commits, and `labeled` lets you start a run
+  manually by adding a label.
+- **`branches`**: the workflow runs only for PRs that target your main branch.
+- **`paths`**: change this to your data model directories, so changes to
+  unrelated files (for example documentation or tests) do not start a run.
 
 ### Generate Specific Schemas with Custom Labels
 
@@ -160,39 +161,6 @@ inject code.
 | `schemas`      | Path to directory containing generated schema files, relative to the workspace (e.g., `schemas`). Absolute if `output-directory` is absolute. |
 | `schemas-json` | JSON string containing array of generated schema dictionaries for use with PR comment actions or other downstream processing                  |
 
-## Workflow Trigger Configuration (Recommended)
-
-We recommend using specific workflow triggers to run this action only when
-relevant files change. This improves efficiency and reduces unnecessary CI runs.
-
-### Recommended Trigger Configuration
-
-```yaml
-on:
-  pull_request:
-    types:
-      - opened # When PR is first opened
-      - synchronize # When new commits are pushed
-      - labeled # When labels are added (optional - useful for manual triggers)
-    branches:
-      - 'main' # Only for PRs targeting main branch
-    paths:
-      - 'path/to/data/model/directories/**' # Your data model directories
-```
-
-### Why These Triggers?
-
-- **`types`**: Controls when the workflow runs during the PR lifecycle
-  - `opened`: Validates schemas when PR is created
-  - `synchronize`: Re-validates on new commits
-  - `labeled`: Allows manual triggering by adding labels
-
-- **`branches`**: Ensures the workflow only runs for PRs targeting your main
-  branch
-
-- **`paths`**: Prevents unnecessary runs when unrelated files change (e.g.,
-  documentation, tests)
-
 ## Local Development and Testing
 
 ### Running Unit Tests
@@ -240,24 +208,10 @@ docker run --rm `
   generate-jsonschema-action
 ```
 
-Or as a single line:
-
-```powershell
-docker run --rm -e DATA_MODEL_SOURCE="/test/data_model.csv" -v "${PWD}/test:/test" generate-jsonschema-action
-```
-
 ### Linting
 
 To lint the full repository locally, see "Linting" in the
 [root `README.md`](../README.md#linting).
-
-## Technical Details
-
-- **Base Image**: `ghcr.io/sage-bionetworks/synapsepythonclient`. The `FROM` tag
-  in the `Dockerfile` sets the version.
-- **Python Version**: The Python version in the base image
-- **Dependencies**: synapseclient with curator extension (pre-installed in base
-  image). The base image tag sets the synapseclient version.
 
 ## Related Actions
 

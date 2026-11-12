@@ -15,7 +15,7 @@ repositories call the actions as `Sage-Bionetworks/synapse-actions/<action>@v1`
 
 - Python and synapseclient come from the base image
   `ghcr.io/sage-bionetworks/synapsepythonclient`. Each action `Dockerfile` sets
-  its own `FROM` tag. See the module `CLAUDE.md` files for the version rules.
+  its own `FROM` tag. See "Constraints" for the version rules.
 - pytest for tests, one `requirements.txt` for each action (test-only deps).
 - super-linter slim (`.github/workflows/linter.yml`) with the configs at the
   root (`LINTER_RULES_PATH: .`).
@@ -78,15 +78,26 @@ For tests, Docker build and Docker run of each action, see the module
 
 - Pin each action whose owner is not `actions/` to a full commit SHA with a
   `# vX.Y.Z` comment. This is the Sage repository security policy.
-- Use only `ghcr.io/sage-bionetworks/synapsepythonclient:vX.Y.Z` release tags in
-  each `FROM` line, and do not `pip install` in a `Dockerfile`. Dependabot
-  changes only the `FROM` line, and the CI steps read the synapseclient version
-  from it (DPE-1851).
+- Keep the `Dockerfile` `FROM` tag as the only place that sets the synapseclient
+  version. Do not `pip install` anything in a `Dockerfile`. The base image has
+  no pip, Dependabot changes only the `FROM` line, and the CI steps read the
+  synapseclient version from it. Thus a second pin would silently downgrade the
+  client after each Dependabot update (DPE-1851).
+- Use only `ghcr.io/sage-bionetworks/synapsepythonclient:vX.Y.Z` release tags,
+  not `develop-<sha>` tags. Dependabot cannot follow develop tags, so the
+  actions did not get the conditional fixes in 4.12 and 4.14 (DPE-1851).
 - Keep the `@sha256:<digest>` after the tag in each `FROM` line, and update the
   tag and the digest together. The `python-tests.yml` step "Read base image from
-  Dockerfile" fails if the `FROM` line has no digest.
+  Dockerfile" fails if the `FROM` line is not
+  `...synapsepythonclient:vX.Y.Z@sha256:<digest>`.
+- When the base image changes the Python version, update the `python-version`
+  input in `<action>-ci.yml` by hand (Dependabot does not change it). The step
+  "Check Python version matches base image" fails until the two values are the
+  same. Do not write the current Python or synapseclient version in a
+  `CLAUDE.md` file. Refer to the `Dockerfile` `FROM` tag.
 - Do not change the CI Synapse org `dpetest` to a production org. The register
-  CI jobs really register schemas in it.
+  CI jobs really register schemas in it (see `register-jsonschema/CLAUDE.md` for
+  the concurrency rule).
 - Do not put secret values in workflows. Use
   `${{ secrets.SYNAPSE_AUTH_TOKEN }}`.
 

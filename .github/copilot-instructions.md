@@ -51,6 +51,8 @@ the code.
   this image.
 - Do not add `pip install` to a `Dockerfile`. The CI reads the synapseclient
   version from the `FROM` line.
+- When the base image changes the Python version, update the `python-version`
+  input in `<action>-ci.yml` by hand. Dependabot does not change it.
 
 ## Workflows
 
@@ -59,6 +61,9 @@ the code.
 - Change the shared test steps in `python-tests.yml`, not in the caller
   workflows.
 - Do not change the Synapse org `dpetest` that the CI uses.
+- Do not remove the `concurrency` group or the `needs:` chain in
+  `register-jsonschema-ci.yml`. They make sure that only one job registers
+  schemas in `dpetest` at a time.
 - Do not put secret values in workflows. Use
   `${{ secrets.SYNAPSE_AUTH_TOKEN }}`.
 - Do not format the workflow files or `action.yml` files with Prettier. Use the

@@ -34,7 +34,9 @@ Run these commands from `register-jsonschema/`. CI
 run, a run of the local action (`uses: ./register-jsonschema`), and a full
 workflow with `uses: ./generate-jsonschema` followed by
 `uses: ./register-jsonschema`. All 4 jobs call the real Synapse with the
-`SYNAPSE_AUTH_TOKEN` secret.
+`SYNAPSE_AUTH_TOKEN` secret. The 3 jobs that register in the org `dpetest` run
+in sequence (`test-docker`, then `test-action`, then `test-workflow`). The
+pytest job uses a random org, so it runs in parallel.
 
 ## Data Models
 
@@ -68,23 +70,18 @@ workflow with `uses: ./generate-jsonschema` followed by
 
 ## Constraints
 
-- Keep the `Dockerfile` `FROM` tag as the only place that sets the synapseclient
-  version. Do not `pip install` anything in the `Dockerfile`. The base image has
-  no pip, and Dependabot changes only the `FROM` line, so a second pin would
-  silently downgrade the client (DPE-1851).
-- Update the image tag and the `@sha256` digest in the `FROM` line together. The
-  step "Read base image from Dockerfile" in `python-tests.yml` accepts only
-  `...synapsepythonclient:vX.Y.Z@sha256:<digest>`.
-- Use only release image tags, not `develop-<sha>` tags. Dependabot cannot
-  follow develop tags, so the action did not get the conditional fixes in 4.12
-  and 4.14 (DPE-1851).
-- When the base image changes the Python version, update the `python-version`
-  input in `register-jsonschema-ci.yml` by hand. The step "Check Python version
-  matches base image" fails until the two values are the same. Do not write the
-  current Python or synapseclient version in this file.
+- For the base image rules (`FROM` tag, digest, release tags, no `pip install`,
+  `python-version` in `register-jsonschema-ci.yml`), see "Constraints" in the
+  root `CLAUDE.md`.
 
 ## Antipatterns — Do NOT
 
+- Do NOT remove the workflow `concurrency` group (`register-jsonschema-dpetest`,
+  `cancel-in-progress: false`) or the `needs:` chain in
+  `register-jsonschema-ci.yml`. All runs register schemas in the shared org
+  `dpetest`, so two runs at the same time can make each other fail. GitHub keeps
+  only one pending run in the group. A newer pending run cancels the older
+  pending run, but not the run that is in progress.
 - Do NOT expect a re-run with the same `VERSION` to pass. Synapse cannot
   overwrite a registered schema version, so each schema that registered before
   fails on the re-run.
@@ -136,8 +133,8 @@ workflow with `uses: ./generate-jsonschema` followed by
 ## Related Systems
 
 - `generate-jsonschema` (sibling action): its `schemas` output is this action's
-  `schema-dir` input. It uses the same base image and the same version rule. The
-  CI `test-workflow` job runs the local `./generate-jsonschema`, so a change
-  there can break this CI.
+  `schema-dir` input. It uses the same base image and the same version rule. A
+  change to it can break this CI (see "Cross-action CI" in the root
+  `CLAUDE.md`).
 - Promotion of a prerelease to a release does not trigger `release: published`.
   Thus caller workflows can skip registration (DPE-1650).

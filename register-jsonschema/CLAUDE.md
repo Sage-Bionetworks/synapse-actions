@@ -91,7 +91,7 @@ workflow with `uses: ./generate-jsonschema` followed by
 - Do NOT call `sys.exit()` in `register_schema`. On failure it prints
   `::error::` and returns `None`. `main()` then tries the other files, prints
   the "Registration Summary", writes the `uris` of the schemas that registered
-  to `GITHUB_OUTPUT`, and exits with 1 if one or more files failed (DPE-1790).
+  to `GITHUB_OUTPUT`, and returns 1 if one or more files failed (DPE-1790).
   `test_non_json` and `test_malformed_json` check the summary and the output.
 - Do NOT move `syn.login()` above the input checks (`ORG_NAME`, `SCHEMA_DIR`,
   directory exists, `*.json` files present). These checks run before the login,

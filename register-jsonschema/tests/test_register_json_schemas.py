@@ -104,7 +104,7 @@ class TestRegisterJsonSchemas:
         self, capsys, organization: Organization, text_file_path: str
     ) -> None:
         """Integration test for registering JSON schemas from a directory."""
-        main()
+        assert main() == 0
         captured = capsys.readouterr()
         assert "Fix Schema Name: False" in captured.out
         assert "Registered: Patient version 1.0.0" in captured.out
@@ -116,7 +116,7 @@ class TestRegisterJsonSchemas:
     ) -> None:
         """Integration test for registering JSON schemas from a directory."""
         monkeypatch.delenv("VERSION", raising=False)
-        main()
+        assert main() == 0
         captured = capsys.readouterr()
         assert "Registered: Patient version None" in captured.out
         assert "Registered: Biospecimen version None" in captured.out
@@ -132,7 +132,7 @@ class TestRegisterJsonSchemas:
         """
         monkeypatch.setenv("FIX_SCHEMA_NAME", "true")
         monkeypatch.setenv("SCHEMA_DIR", str(TESTS_DIR / "schema_dir_invalid_names"))
-        main()
+        assert main() == 0
         captured = capsys.readouterr()
         assert "Fix Schema Name: True" in captured.out
         assert "Registered: Patient.Schema version 1.0.0" in captured.out
@@ -142,20 +142,14 @@ class TestRegisterJsonSchemas:
     def test_org_does_not_exist(self, monkeypatch, capsys) -> None:
         """Integration test for registering JSON schemas from a directory."""
         monkeypatch.setenv("ORG_NAME", "not_a_real_org")
-        with pytest.raises(SystemExit) as exc_info:
-            main()
-        assert exc_info.type is SystemExit
-        assert exc_info.value.code == 1
+        assert main() == 1
         captured = capsys.readouterr()
         assert "::error:: Organization not found: not_a_real_org" in captured.err
 
     def test_non_json(self, monkeypatch, capsys, text_file_path: str) -> None:
         """A file that is not JSON fails, and main() still prints the summary."""
         monkeypatch.setenv("SCHEMA_DIR", str(TESTS_DIR / "non_schema_dir"))
-        with pytest.raises(SystemExit) as exc_info:
-            main()
-        assert exc_info.type is SystemExit
-        assert exc_info.value.code == 1
+        assert main() == 1
         captured = capsys.readouterr()
         json_file = TESTS_DIR / "non_schema_dir" / "Patient.json"
         assert (
@@ -167,10 +161,7 @@ class TestRegisterJsonSchemas:
     def test_malformed_json(self, monkeypatch, capsys, text_file_path: str) -> None:
         """JSON that Synapse rejects fails, and main() still prints the summary."""
         monkeypatch.setenv("SCHEMA_DIR", str(TESTS_DIR / "malformed_schema_dir"))
-        with pytest.raises(SystemExit) as exc_info:
-            main()
-        assert exc_info.type is SystemExit
-        assert exc_info.value.code == 1
+        assert main() == 1
         captured = capsys.readouterr()
         json_file = TESTS_DIR / "malformed_schema_dir" / "Patient.json"
         assert (
@@ -193,27 +184,21 @@ class TestInputChecks:
     def test_no_org_env_var(self, monkeypatch, capsys) -> None:
         """A missing ORG_NAME gives an error before the login."""
         monkeypatch.delenv("ORG_NAME", raising=False)
-        with pytest.raises(SystemExit) as exc_info:
-            main()
-        assert exc_info.value.code == 1
+        assert main() == 1
         captured = capsys.readouterr()
         assert "::error:: ORG_NAME environment variable is required" in captured.err
 
     def test_no_schema_dir_env_var(self, monkeypatch, capsys) -> None:
         """A missing SCHEMA_DIR gives an error before the login."""
         monkeypatch.delenv("SCHEMA_DIR", raising=False)
-        with pytest.raises(SystemExit) as exc_info:
-            main()
-        assert exc_info.value.code == 1
+        assert main() == 1
         captured = capsys.readouterr()
         assert "::error:: SCHEMA_DIR environment variable is required" in captured.err
 
     def test_dir_does_not_exist(self, monkeypatch, capsys) -> None:
         """A schema directory that does not exist gives an error before the login."""
         monkeypatch.setenv("SCHEMA_DIR", str(TESTS_DIR / "not_a_real_directory"))
-        with pytest.raises(SystemExit) as exc_info:
-            main()
-        assert exc_info.value.code == 1
+        assert main() == 1
         captured = capsys.readouterr()
         assert "::error:: Schema directory not found" in captured.err
 
@@ -226,16 +211,13 @@ class TestInputChecks:
             monkeypatch.delenv("VERSION", raising=False)
         # A missing directory stops main() after the header and before the login
         monkeypatch.setenv("SCHEMA_DIR", str(TESTS_DIR / "not_a_real_directory"))
-        with pytest.raises(SystemExit):
-            main()
+        assert main() == 1
         assert "Version: None\n" in capsys.readouterr().out
 
     def test_empty_dir(self, monkeypatch, capsys, empty_folder_path: str) -> None:
         """A schema directory with no JSON files gives an error before the login."""
         monkeypatch.setenv("SCHEMA_DIR", empty_folder_path)
-        with pytest.raises(SystemExit) as exc_info:
-            main()
-        assert exc_info.value.code == 1
+        assert main() == 1
         captured = capsys.readouterr()
         message = f"::error:: No JSON files found in: {empty_folder_path}"
         assert message in captured.err
@@ -243,7 +225,5 @@ class TestInputChecks:
     def test_invalid_token(self, monkeypatch, capsys) -> None:
         """A token that is not valid gives a login error, not a traceback."""
         monkeypatch.setenv("SYNAPSE_AUTH_TOKEN", "not_a_valid_token")
-        with pytest.raises(SystemExit) as exc_info:
-            main()
-        assert exc_info.value.code == 1
+        assert main() == 1
         assert "::error:: Synapse login failed" in capsys.readouterr().err

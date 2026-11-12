@@ -14,7 +14,7 @@ from synapseclient.extensions.curator import register_jsonschema
 from synapseclient.models import JSONSchema, Organization
 
 
-def main() -> None:
+def main() -> int:
     """
     Main function to register JSON schemas into a Synapse organization.
     Expects the following environment variables:
@@ -27,6 +27,10 @@ def main() -> None:
         file in GitHub Actions output format.
     - FIX_SCHEMA_NAME: If True, fixes the schema name to meet Synapse
         requirements by replacing dashes and underscores with periods.
+
+    Returns:
+        0 if all schemas registered, 1 if an input check, the login or one or
+        more registrations failed
     """
     org_name = os.environ.get("ORG_NAME")
     schema_dir = os.environ.get("SCHEMA_DIR")
@@ -38,11 +42,11 @@ def main() -> None:
 
     if not org_name:
         print("::error:: ORG_NAME environment variable is required", file=sys.stderr)
-        sys.exit(1)
+        return 1
 
     if not schema_dir:
         print("::error:: SCHEMA_DIR environment variable is required", file=sys.stderr)
-        sys.exit(1)
+        return 1
 
     # Remove the "v" prefix before the header, so all log lines show one version
     if version and version.startswith("v"):
@@ -53,12 +57,12 @@ def main() -> None:
     schema_path = Path(schema_dir)
     if not schema_path.exists():
         print(f"::error:: Schema directory not found: {schema_path}", file=sys.stderr)
-        sys.exit(1)
+        return 1
 
     json_files = list(schema_path.glob("*.json"))
     if not json_files:
         print(f"::error:: No JSON files found in: {schema_path}", file=sys.stderr)
-        sys.exit(1)
+        return 1
 
     syn = Synapse()
     try:
@@ -68,7 +72,7 @@ def main() -> None:
     except Exception as e:  # noqa: BLE001 # pylint: disable=broad-exception-caught
         print("::error:: Synapse login failed", file=sys.stderr)
         print(f"::error:: {e!s}", file=sys.stderr)
-        sys.exit(1)
+        return 1
 
     try:
         org = Organization(name=org_name)
@@ -77,7 +81,7 @@ def main() -> None:
     except Exception as e:  # noqa: BLE001 # pylint: disable=broad-exception-caught
         print(f"::error:: Organization not found: {org_name}", file=sys.stderr)
         print(f"::error:: {e!s}", file=sys.stderr)
-        sys.exit(1)
+        return 1
 
     print(f"Found {len(json_files)} JSON schema file(s)\n")
 
@@ -94,7 +98,8 @@ def main() -> None:
     print_summary(len(json_files), success_count, failed_count)
 
     if failed_count > 0:
-        sys.exit(1)
+        return 1
+    return 0
 
 
 def print_header(
@@ -211,5 +216,4 @@ def register_schema(
 
 
 if __name__ == "__main__":
-    main()
-    sys.exit(0)
+    sys.exit(main())

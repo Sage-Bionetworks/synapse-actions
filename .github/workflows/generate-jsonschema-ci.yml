@@ -32,7 +32,7 @@ jobs:
       # Must match the Python version in the Dockerfile base image.
       python-version: "3.15"
       synapseclient-extras: pandas,curator
-      test-path: test
+      test-path: tests
 
   docker-build:
     name: Docker Build Test
@@ -68,7 +68,7 @@ jobs:
         id: generate
         uses: ./generate-jsonschema
         with:
-          data-model-source: ./generate-jsonschema/test/data_model.csv
+          data-model-source: ./generate-jsonschema/tests/data_model.csv
           data-model-labels: "display_label"
           data-types: "Datatype1,Datatype2"
           output-directory: "test-schemas"

@@ -21,15 +21,15 @@ generated schemas. ELITE and ADKP data-model repos use this action.
 SYN_VERSION=$(sed -n 's/^FROM .*synapsepythonclient:v\([^ @]*\).*/\1/p' Dockerfile | head -n1)
 pip install "synapseclient[pandas,curator]==${SYN_VERSION}"   # same as CI
 pip install -r requirements.txt   # test-only deps (PyYAML, pytest)
-python -m pytest test -v
+python -m pytest tests -v
 docker build -t generate-jsonschema-action .
-docker run --rm -e DATA_MODEL_SOURCE="/test/data_model.csv" -v $(pwd)/test:/test generate-jsonschema-action
+docker run --rm -e DATA_MODEL_SOURCE="/tests/data_model.csv" -v $(pwd)/tests:/tests generate-jsonschema-action
 ```
 
 Run these commands from `generate-jsonschema/`. CI
 (`.github/workflows/generate-jsonschema-ci.yml`) has 3 jobs: pytest, a Docker
 build, and a run of the local action (`uses: ./generate-jsonschema`) on
-`test/data_model.csv`. The register CI also runs this action (see the root
+`tests/data_model.csv`. The register CI also runs this action (see the root
 `CLAUDE.md`).
 
 ## Data Models
@@ -54,7 +54,7 @@ build, and a run of the local action (`uses: ./generate-jsonschema`) on
   `schemas-json` is `json.dumps` of the schema list, written as a multiline
   heredoc with the delimiter `EOF`. Users parse `schemas-json` (see the
   `README.md` PR-comment example), so do not change its shape.
-- **Test fixture `test/data_model.csv`:** 3 template rows (`IsTemplate=TRUE`:
+- **Test fixture `tests/data_model.csv`:** 3 template rows (`IsTemplate=TRUE`:
   Datatype1–3), each with one required property. The tests hardcode the counts
   (`TOTAL_SCHEMAS_IN_TEST_MODEL = 3`, "generated 1/2/3 schema(s)"). If you
   change the fixture, update these counts. The `IsTemplate` column needs
@@ -77,11 +77,11 @@ build, and a run of the local action (`uses: ./generate-jsonschema`) on
 
 - To add or rename an input or output, change all 5 places: `action.yml`
   `inputs`/`outputs`, `action.yml` `runs.env`, the script, the `README.md`
-  Inputs/Outputs tables, and the lists in `test/test_action_setup.py`. (Revert
+  Inputs/Outputs tables, and the lists in `tests/test_action_setup.py`. (Revert
   `8cc401a` in the old `Sage-Bionetworks-Actions/generate-jsonschema` repository
   restored an `output-directory` input that was lost from `action.yml` in a
   linter fix.)
-- `test/test_action_setup.py` does string checks on the source: the script must
+- `tests/test_action_setup.py` does string checks on the source: the script must
   contain `from synapseclient import Synapse`,
   `from synapseclient.extensions.curator import generate_jsonschema`,
   `def main():`, and `if __name__ == "__main__":`. The `README.md` must contain
@@ -98,7 +98,7 @@ build, and a run of the local action (`uses: ./generate-jsonschema`) on
 
 ## Testing
 
-- `test/test_integration.py` calls `main()` for real against the installed
+- `tests/test_integration.py` calls `main()` for real against the installed
   synapseclient. It does not mock anything. Set inputs with
   `monkeypatch.setenv`/`delenv`. An autouse fixture does `chdir` to `tmp_path`,
   so the output goes there.
@@ -112,4 +112,4 @@ build, and a run of the local action (`uses: ./generate-jsonschema`) on
   rule (one version source).
 - Behavior changes in schema output come from synapseclient releases, for
   example SYNPY-1769 (property order). Before you change the image tag, compare
-  the output for `test/data_model.csv` from the old and new images.
+  the output for `tests/data_model.csv` from the old and new images.

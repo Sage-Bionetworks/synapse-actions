@@ -174,7 +174,7 @@ pip install "synapseclient[pandas,curator]==${SYN_VERSION}"
 pip install -r requirements.txt
 
 # Run tests
-pytest test -v
+pytest tests -v
 ```
 
 ### Building the Docker Container
@@ -189,8 +189,8 @@ docker build -t generate-jsonschema-action .
 
 ```bash
 docker run --rm \
-  -e DATA_MODEL_SOURCE="/test/data_model.csv" \
-  -v $(pwd)/test:/test \
+  -e DATA_MODEL_SOURCE="/tests/data_model.csv" \
+  -v $(pwd)/tests:/tests \
   generate-jsonschema-action
 ```
 
@@ -202,8 +202,8 @@ backslashes.
 
 ```powershell
 docker run --rm `
-  -e DATA_MODEL_SOURCE="/test/data_model.csv" `
-  -v "${PWD}/test:/test" `
+  -e DATA_MODEL_SOURCE="/tests/data_model.csv" `
+  -v "${PWD}/tests:/tests" `
   generate-jsonschema-action
 ```
 

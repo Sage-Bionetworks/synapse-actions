@@ -11,7 +11,7 @@ not use an `entrypoint.sh` script.
 | ------------------------------------ | -------------------------------------------------------- |
 | `generate-jsonschema/`               | Action that makes JSON Schemas from a CSV or JSONLD file |
 | `generate-jsonschema/src/`           | Python script of the action                              |
-| `generate-jsonschema/test/`          | pytest tests and fixtures                                |
+| `generate-jsonschema/tests/`         | pytest tests and fixtures                                |
 | `register-jsonschema/`               | Action that registers schemas in Synapse                 |
 | `register-jsonschema/src/`           | Python script of the action                              |
 | `register-jsonschema/tests/`         | pytest tests and fixtures                                |

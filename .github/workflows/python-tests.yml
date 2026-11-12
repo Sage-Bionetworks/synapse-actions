@@ -1,0 +1,102 @@
+name: Python Tests
+
+# Shared pytest job for the action CI workflows. The synapseclient version
+# comes from the FROM line of the Dockerfile in the action directory.
+on:
+  workflow_call:
+    inputs:
+      action-directory:
+        description: Action directory, for example generate-jsonschema
+        required: true
+        type: string
+      python-version:
+        description: Must match the Python version in the base image
+        required: true
+        type: string
+      synapseclient-extras:
+        description: synapseclient extras to install, for example curator
+        required: true
+        type: string
+      test-path:
+        description: Test directory, relative to the action directory
+        required: true
+        type: string
+    secrets:
+      SYNAPSE_AUTH_TOKEN:
+        description: Synapse token for tests that call Synapse
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.action-directory }}
+    env:
+      PYTHON_VERSION: ${{ inputs.python-version }}
+
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Read base image from Dockerfile
+        run: |
+          # Parse the FROM line one time. Accept only a release tag
+          # (vX.Y.Z) with a @sha256 digest.
+          FROM_LINE=$(grep -m1 '^FROM ' Dockerfile || true)
+          IMG='ghcr\.io/sage-bionetworks/synapsepythonclient'
+          VER='([0-9]+\.[0-9]+\.[0-9]+)'
+          DIGEST='@sha256:[0-9a-f]{64}'
+          RE="^FROM (${IMG}:v${VER}${DIGEST})( |$)"
+          if [[ ! "$FROM_LINE" =~ $RE ]]; then
+            echo "::error::Could not read a release synapseclient image" \
+              "from Dockerfile (got '$FROM_LINE'). Expected a line like" \
+              "'FROM ghcr.io/sage-bionetworks/synapsepythonclient:vX.Y.Z@sha256:<digest>'"
+            exit 1
+          fi
+          BASE_IMAGE=${BASH_REMATCH[1]}
+          SYN_VERSION=${BASH_REMATCH[2]}
+          echo "Base image: $BASE_IMAGE"
+          echo "synapseclient version: $SYN_VERSION"
+          echo "BASE_IMAGE=$BASE_IMAGE" >> "$GITHUB_ENV"
+          echo "SYN_VERSION=$SYN_VERSION" >> "$GITHUB_ENV"
+
+      - name: Check Python version matches base image
+        env:
+          CALLER_WORKFLOW: ${{ github.workflow }}
+        run: |
+          IMAGE_PY=$(docker run --rm --entrypoint python "$BASE_IMAGE" \
+            -c 'import sys; print("%d.%d" % sys.version_info[:2])')
+          echo "Base image Python: $IMAGE_PY, CI Python: $PYTHON_VERSION"
+          if [ "$IMAGE_PY" != "$PYTHON_VERSION" ]; then
+            echo "::error::CI python-version ($PYTHON_VERSION) does not" \
+              "match the base image Python ($IMAGE_PY). Update" \
+              "python-version in the '$CALLER_WORKFLOW' workflow."
+            exit 1
+          fi
+
+      - name: Setup Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Install dependencies
+        env:
+          SYN_EXTRAS: ${{ inputs.synapseclient-extras }}
+        run: |
+          # SYN_VERSION comes from the "Read base image" step
+          python -m pip install --upgrade pip
+          pip install "synapseclient[${SYN_EXTRAS}]==${SYN_VERSION}"
+          pip install -r requirements.txt
+
+      - name: Run Tests
+        env:
+          SYNAPSE_AUTH_TOKEN: ${{ secrets.SYNAPSE_AUTH_TOKEN }}
+          TEST_PATH: ${{ inputs.test-path }}
+        run: |
+          python -m pytest "$TEST_PATH" -v

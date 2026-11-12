@@ -1,0 +1,143 @@
+name: Register JSON Schema CI
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - register-jsonschema/**
+      - generate-jsonschema/**
+      - .github/workflows/register-jsonschema-ci.yml
+      - .github/workflows/python-tests.yml
+  push:
+    branches:
+      - main
+    paths:
+      - register-jsonschema/**
+      - generate-jsonschema/**
+      - .github/workflows/register-jsonschema-ci.yml
+      - .github/workflows/python-tests.yml
+
+permissions:
+  contents: read
+
+# The jobs register schemas in the shared Synapse org dpetest. Do not let two
+# runs do this at the same time. A new run waits, and does not cancel the run
+# that is in progress.
+concurrency:
+  group: register-jsonschema-dpetest
+  cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: register-jsonschema
+
+jobs:
+
+  test-code:
+    name: Tests
+    uses: ./.github/workflows/python-tests.yml
+    with:
+      action-directory: register-jsonschema
+      # Must match the Python version in the Dockerfile base image.
+      python-version: "3.15"
+      synapseclient-extras: curator
+      test-path: tests
+    secrets:
+      SYNAPSE_AUTH_TOKEN: ${{ secrets.SYNAPSE_AUTH_TOKEN }}
+
+
+  test-docker:
+    name: Docker Tests
+    runs-on: ubuntu-latest
+
+    env:
+      TEST_TAG: register-jsonschema-action:test
+
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Docker BuildX
+        id: setup-buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build the Container
+        id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: register-jsonschema
+          push: false
+          load: true
+          tags: ${{ env.TEST_TAG }}
+
+      - name: Run the Container
+        id: run
+        env:
+          ORG_NAME: dpetest
+          SCHEMA_DIR: /schema_dir
+          FIX_SCHEMA_NAME: "true"
+          SYNAPSE_AUTH_TOKEN: ${{ secrets.SYNAPSE_AUTH_TOKEN }}
+        run: |
+          docker run \
+            -v "$(pwd)/tests/schema_dir":/schema_dir \
+            --env ORG_NAME \
+            --env SCHEMA_DIR \
+            --env FIX_SCHEMA_NAME \
+            --env SYNAPSE_AUTH_TOKEN \
+            --rm "$TEST_TAG"
+
+  test-action:
+    name: GitHub Actions Test
+    runs-on: ubuntu-latest
+    needs: test-docker
+
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Test Local Action
+        id: register
+        uses: ./register-jsonschema
+        with:
+          org-name: dpetest
+          schema-dir: register-jsonschema/tests/schema_dir
+          synapse-auth-token: ${{ secrets.SYNAPSE_AUTH_TOKEN }}
+
+      - name: Check Registered URIs
+        env:
+          URIS: ${{ steps.register.outputs.uris }}
+        run: ./tests/check_uris.sh 2 dpetest
+
+  test-workflow:
+    name: GitHub Workflow Test
+    runs-on: ubuntu-latest
+    needs: test-action
+
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Generate JSON Schemas
+        id: generate
+        uses: ./generate-jsonschema
+        with:
+          data-model-source: ./register-jsonschema/tests/data_model.csv
+          data-model-labels: "display_label"
+
+      - name: Register JSON Schemas
+        id: register
+        uses: ./register-jsonschema
+        with:
+          org-name: dpetest
+          fix-schema-name: "true"
+          schema-dir: ${{ steps.generate.outputs.schemas }}
+          synapse-auth-token: ${{ secrets.SYNAPSE_AUTH_TOKEN }}
+
+      - name: Check Registered URIs
+        env:
+          URIS: ${{ steps.register.outputs.uris }}
+        run: ./tests/check_uris.sh 3 dpetest

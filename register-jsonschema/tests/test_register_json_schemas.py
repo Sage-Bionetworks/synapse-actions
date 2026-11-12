@@ -3,7 +3,6 @@
 # pytest fixtures are passed to tests as arguments with the same name.
 # pylint: disable=redefined-outer-name
 
-import os
 import sys
 import uuid
 from pathlib import Path
@@ -32,6 +31,22 @@ def check_one_failure(stdout: str, github_output: str) -> None:
     assert "Total Processed: 1\nSuccessful: 0\nFailed: 1\n" in stdout
     output = Path(github_output).read_text(encoding="utf-8")
     assert output == "uris<<EOF\n\nEOF\n"
+
+
+def check_success(github_output: str, org_name: str) -> None:
+    """
+    Check that main() wrote the URIs of the two registered schemas to the output.
+
+    Args:
+        github_output: Path to the GITHUB_OUTPUT file
+        org_name: Name of the organization that the schemas are registered in
+    """
+    lines = Path(github_output).read_text(encoding="utf-8").splitlines()
+    assert lines[0] == "uris<<EOF"
+    assert lines[-1] == "EOF"
+    uris = lines[1:-1]
+    assert len(uris) == 2
+    assert all(uri.startswith(f"{org_name}-") for uri in uris)
 
 
 @pytest.fixture(scope="module")
@@ -85,17 +100,19 @@ class TestRegisterJsonSchemas:
         monkeypatch.setenv("SCHEMA_DIR", str(TESTS_DIR / "schema_dir"))
         monkeypatch.setenv("GITHUB_OUTPUT", text_file_path)
 
-    def test_success(self, capsys, text_file_path: str) -> None:
+    def test_success(
+        self, capsys, organization: Organization, text_file_path: str
+    ) -> None:
         """Integration test for registering JSON schemas from a directory."""
         main()
         captured = capsys.readouterr()
         assert "Fix Schema Name: False" in captured.out
         assert "Registered: Patient version 1.0.0" in captured.out
         assert "Registered: Biospecimen version 1.0.0" in captured.out
-        assert os.path.exists(text_file_path)
+        check_success(text_file_path, organization.name)
 
     def test_success_no_version_env_var(
-        self, monkeypatch, capsys, text_file_path: str
+        self, monkeypatch, capsys, organization: Organization, text_file_path: str
     ) -> None:
         """Integration test for registering JSON schemas from a directory."""
         monkeypatch.delenv("VERSION", raising=False)
@@ -103,10 +120,10 @@ class TestRegisterJsonSchemas:
         captured = capsys.readouterr()
         assert "Registered: Patient version None" in captured.out
         assert "Registered: Biospecimen version None" in captured.out
-        assert os.path.exists(text_file_path)
+        check_success(text_file_path, organization.name)
 
     def test_success_fix_schema_name(
-        self, monkeypatch, capsys, text_file_path: str
+        self, monkeypatch, capsys, organization: Organization, text_file_path: str
     ) -> None:
         """
         Integration test for registering JSON schemas from a directory.
@@ -120,7 +137,7 @@ class TestRegisterJsonSchemas:
         assert "Fix Schema Name: True" in captured.out
         assert "Registered: Patient.Schema version 1.0.0" in captured.out
         assert "Registered: Biospecimen.Schema version 1.0.0" in captured.out
-        assert os.path.exists(text_file_path)
+        check_success(text_file_path, organization.name)
 
     def test_org_does_not_exist(self, monkeypatch, capsys) -> None:
         """Integration test for registering JSON schemas from a directory."""

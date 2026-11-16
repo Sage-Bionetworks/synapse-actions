@@ -26,7 +26,8 @@ def main() -> int:
     - GITHUB_OUTPUT: Path to GitHub Actions output file
       (automatically provided in GitHub Actions environment)
     """
-    data_model_source = os.environ.get("DATA_MODEL_SOURCE")
+    # An unset variable gives "", so mypy sees str. The check fails for "".
+    data_model_source = os.environ.get("DATA_MODEL_SOURCE", "")
     if not validate_data_model_source(data_model_source):
         return 1
 

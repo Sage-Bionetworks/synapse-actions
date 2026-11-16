@@ -15,7 +15,7 @@ repos use the two actions together.
   Python and synapseclient with the curator extras. Its tag in the `FROM` line
   of the `Dockerfile` is the version.
 - `requirements.txt` has only the test dependencies, pytest and PyYAML (for
-  `tests/unit/test_action_setup.py`).
+  `tests/unit/test_register_setup.py`).
 
 ## Commands
 
@@ -67,7 +67,7 @@ pytest job uses a random org, so it runs in parallel.
   `::error::`) and `"Registered: Patient version 1.0.0"`.
 - To add or rename an input or output, change all 5 places: `action.yml`
   `inputs`/`outputs`, `action.yml` `runs.env`, the script, the `README.md`
-  Inputs/Outputs tables, and the lists in `tests/unit/test_action_setup.py`.
+  Inputs/Outputs tables, and the lists in `tests/unit/test_register_setup.py`.
 
 ## Constraints
 
@@ -111,7 +111,7 @@ pytest job uses a random org, so it runs in parallel.
   - `tests/integration/test_register_json_schemas.py`: the class
     `TestRegisterJsonSchemas` calls `main()` against the real Synapse. These
     tests need a valid `SYNAPSE_AUTH_TOKEN`.
-  - `tests/unit/test_action_functions.py`: one class for each function in the
+  - `tests/unit/test_register_functions.py`: one class for each function in the
     script. `TestInputChecks` tests the input checks of `main()` and the login
     error. The other classes are `Test<FunctionName>` (for example
     `TestWriteGithubOutput`). If you add a function to the script, add a class
@@ -120,9 +120,11 @@ pytest job uses a random org, so it runs in parallel.
     fail before the call to Synapse. The organization check of
     `connect_to_synapse()` needs a valid login, so only the integration tests
     test it.
-- `tests/unit/test_action_setup.py` checks only `action.yml`: the inputs, the
+- `tests/unit/test_register_setup.py` checks only `action.yml`: the inputs, the
   defaults, the `uris` output and the `runs.env` mapping. It does not import the
-  script and does not need a token.
+  script and does not need a token. Its fixtures and shared checks come from
+  `shared/action_yml_checks.py` (see "Shared test helper" in the root
+  `CLAUDE.md`).
 - A module-scoped fixture makes a random org (`test.org.id<8 hex>`) and deletes
   its schemas and the org at the end. All `TestRegisterJsonSchemas` tests share
   it, so two tests must not register the same schema name and version.

@@ -14,7 +14,6 @@ from synapseclient.models import JSONSchema
 
 sys.path.insert(0, str(Path(__file__).parents[2] / "src"))
 from register_json_schemas import (  # noqa: E402 # pylint: disable=wrong-import-position
-    connect_to_synapse,
     main,
     print_header,
     print_summary,

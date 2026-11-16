@@ -50,6 +50,15 @@ For tests, Docker build and Docker run of each action, see the module
   line and checks the Python version. Change these shared rules in
   `python-tests.yml`, not in the caller workflows. Do not copy the test steps
   back into a caller, because jscpd fails on the copy.
+- **Shared test helper:** `shared/action_yml_checks.py` has the `action_file`
+  and `action_config` fixtures and the `action.yml` checks that all actions use.
+  The `pytest.ini` file of each action adds `../shared` to the path and loads
+  the module as a pytest plugin (`-p action_yml_checks`). Thus the tests do not
+  change `sys.path` for it. Put a check that two or more actions use in this
+  module, not in the test files, because jscpd fails on the copy.
+- **CI paths:** each `<action>-ci.yml` has `shared/**` in its `paths` filter.
+  The `push` filter uses the YAML anchor of the `pull_request` filter
+  (`paths: *ci-paths`), because jscpd fails on two lists that are the same.
 - **Cross-action CI:** `register-jsonschema-ci.yml` also runs on changes to
   `generate-jsonschema/**`. Its `test-workflow` job runs the local
   `./generate-jsonschema` and gives its `schemas` output to
@@ -65,9 +74,9 @@ For tests, Docker build and Docker run of each action, see the module
 - To add a new action (for example the LinkML action in ADM-8603), change all of
   these:
   - a new top-level directory with `action.yml`, `Dockerfile`, `src/`, tests,
-    `README.md` and `CLAUDE.md`
+    `pytest.ini` (copied from an existing action), `README.md` and `CLAUDE.md`
   - a new `.github/workflows/<action>-ci.yml`, made from an existing one
-    (`paths`, `working-directory`, the `python-tests.yml` call)
+    (`paths` with `shared/**`, `working-directory`, the `python-tests.yml` call)
   - the Dockerfile `directories` list in `.github/dependabot.yml`
   - `FILTER_REGEX_EXCLUDE` in `linter.yml` and `ignore` in `.jscpd.json` if the
     new tests have fixtures that are not valid or that repeat

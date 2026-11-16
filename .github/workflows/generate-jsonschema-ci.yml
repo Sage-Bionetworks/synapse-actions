@@ -4,17 +4,15 @@ on:
   pull_request:
     branches:
       - main
-    paths:
+    paths: &ci-paths
       - generate-jsonschema/**
       - .github/workflows/generate-jsonschema-ci.yml
       - .github/workflows/python-tests.yml
+      - shared/**
   push:
     branches:
       - main
-    paths:
-      - generate-jsonschema/**
-      - .github/workflows/generate-jsonschema-ci.yml
-      - .github/workflows/python-tests.yml
+    paths: *ci-paths
 
 permissions:
   contents: read

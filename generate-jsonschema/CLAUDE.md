@@ -80,14 +80,16 @@ build, and a run of the local action (`uses: ./generate-jsonschema`) on
 
 - To add or rename an input or output, change all 5 places: `action.yml`
   `inputs`/`outputs`, `action.yml` `runs.env`, the script, the `README.md`
-  Inputs/Outputs tables, and the lists in `tests/unit/test_action_setup.py`.
+  Inputs/Outputs tables, and the lists in `tests/unit/test_generate_setup.py`.
   (Revert `8cc401a` in the old `Sage-Bionetworks-Actions/generate-jsonschema`
   repository restored an `output-directory` input that was lost from
   `action.yml` in a linter fix.)
-- `tests/unit/test_action_setup.py` checks only `action.yml`. Do not add checks
-  for the `Dockerfile` or the script source here. The Docker CI jobs and the
-  `TestMain` class in `tests/unit/test_action_functions.py` already find those
-  problems.
+- `tests/unit/test_generate_setup.py` checks only `action.yml`. Do not add
+  checks for the `Dockerfile` or the script source here. The Docker CI jobs and
+  the `TestMain` class in `tests/unit/test_generate_functions.py` already find
+  those problems. Its fixtures and shared checks come from
+  `shared/action_yml_checks.py` (see "Shared test helper" in the root
+  `CLAUDE.md`).
 
 ## Constraints
 
@@ -101,9 +103,9 @@ build, and a run of the local action (`uses: ./generate-jsonschema`) on
 
 - The tests are in `tests/unit/`. The fixture `data_model.csv` stays in `tests/`
   because CI and the `README.md` use that path.
-  `tests/unit/test_action_functions.py` tests each helper function in one pytest
-  class.
-- The `TestMain` class in `tests/unit/test_action_functions.py` calls `main()`
+  `tests/unit/test_generate_functions.py` tests each helper function in one
+  pytest class.
+- The `TestMain` class in `tests/unit/test_generate_functions.py` calls `main()`
   for real against the installed synapseclient. It does not mock anything. Set
   inputs with `monkeypatch.setenv`/`delenv`. An autouse fixture in the class
   does `chdir` to `tmp_path`, so the output goes there. The fixture also removes

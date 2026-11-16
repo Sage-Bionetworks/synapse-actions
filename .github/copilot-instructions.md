@@ -18,6 +18,8 @@ not use an `entrypoint.sh` script.
 | `<action>/action.yml`                | GitHub Action metadata                                   |
 | `<action>/Dockerfile`                | Docker image of the action                               |
 | `<action>/requirements.txt`          | Test-only Python dependencies                            |
+| `<action>/pytest.ini`                | Loads the shared test helper as a pytest plugin          |
+| `shared/action_yml_checks.py`        | Shared `action.yml` test fixtures and checks             |
 | `.github/workflows/<action>-ci.yml`  | CI workflow of one action                                |
 | `.github/workflows/python-tests.yml` | Reusable test workflow for all actions                   |
 | `.github/workflows/linter.yml`       | super-linter for all files                               |
@@ -45,6 +47,8 @@ the code.
 - Keep functions small, and use names that tell their purpose.
 - Prefer the most maintainable approach, and do not repeat code. jscpd runs with
   `threshold: 0`, so a copied block fails the lint.
+- Put `action.yml` test fixtures and checks that two or more actions use in
+  `shared/action_yml_checks.py`, not in the test files of each action.
 
 ## Docker and Dependencies
 

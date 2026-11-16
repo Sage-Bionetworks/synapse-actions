@@ -81,7 +81,7 @@ jobs:
           SYNAPSE_AUTH_TOKEN: ${{ secrets.SYNAPSE_AUTH_TOKEN }}
         run: |
           docker run \
-            -v "$(pwd)/tests/schema_dir":/schema_dir \
+            -v "$(pwd)/tests/data/schema_dir":/schema_dir \
             --env ORG_NAME \
             --env SCHEMA_DIR \
             --env FIX_SCHEMA_NAME \
@@ -103,7 +103,7 @@ jobs:
         uses: ./register-jsonschema
         with:
           org-name: dpetest
-          schema-dir: register-jsonschema/tests/schema_dir
+          schema-dir: register-jsonschema/tests/data/schema_dir
           synapse-auth-token: ${{ secrets.SYNAPSE_AUTH_TOKEN }}
 
       - name: Check Registered URIs
@@ -125,7 +125,7 @@ jobs:
         id: generate
         uses: ./generate-jsonschema
         with:
-          data-model-source: ./register-jsonschema/tests/data_model.csv
+          data-model-source: ./register-jsonschema/tests/data/data_model.csv
           data-model-labels: "display_label"
 
       - name: Register JSON Schemas

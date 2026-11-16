@@ -38,7 +38,7 @@ jobs:
           CHECKOV_FILE_NAME: .checkov.yml
           DEFAULT_BRANCH: main
           # This test file is not valid JSON on purpose.
-          FILTER_REGEX_EXCLUDE: register-jsonschema/tests/non_schema_dir/.*
+          FILTER_REGEX_EXCLUDE: register-jsonschema/tests/data/non_schema_dir/.*
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LINTER_RULES_PATH: .
           VALIDATE_ALL_CODEBASE: true

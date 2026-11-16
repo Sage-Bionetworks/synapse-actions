@@ -82,7 +82,7 @@ settings as the workflow:
 docker run --rm \
   -e RUN_LOCAL=true \
   -e DEFAULT_BRANCH=main \
-  -e FILTER_REGEX_EXCLUDE='register-jsonschema/tests/non_schema_dir/.*' \
+  -e FILTER_REGEX_EXCLUDE='register-jsonschema/tests/data/non_schema_dir/.*' \
   -e LINTER_RULES_PATH=. \
   -e CHECKOV_FILE_NAME=.checkov.yml \
   -e VALIDATE_ALL_CODEBASE=true \

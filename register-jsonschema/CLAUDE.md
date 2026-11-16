@@ -14,7 +14,8 @@ repos use the two actions together.
 - The base image `ghcr.io/sage-bionetworks/synapsepythonclient:vX.Y.Z` gives
   Python and synapseclient with the curator extras. Its tag in the `FROM` line
   of the `Dockerfile` is the version.
-- `requirements.txt` has only the test dependency, pytest.
+- `requirements.txt` has only the test dependencies, pytest and PyYAML (for
+  `tests/unit/test_action_setup.py`).
 
 ## Commands
 
@@ -24,7 +25,7 @@ pip install "synapseclient[curator]==${SYN_VERSION}"   # same as CI
 pip install -r requirements.txt
 SYNAPSE_AUTH_TOKEN=... python -m pytest tests -v       # run from register-jsonschema/
 docker build -t register-jsonschema-action .
-docker run --rm -v $(pwd)/tests/schema_dir:/schema_dir -e ORG_NAME=dpetest \
+docker run --rm -v $(pwd)/tests/data/schema_dir:/schema_dir -e ORG_NAME=dpetest \
   -e SCHEMA_DIR=/schema_dir -e FIX_SCHEMA_NAME=true \
   -e SYNAPSE_AUTH_TOKEN="$SYNAPSE_AUTH_TOKEN" register-jsonschema-action
 ```
@@ -64,9 +65,9 @@ pytest job uses a random org, so it runs in parallel.
   `captured.out`) and the exact text, for example
   `"::error:: ORG_NAME environment variable is required"` (one space after
   `::error::`) and `"Registered: Patient version 1.0.0"`.
-- To add or rename an input or output, change all 4 places: `action.yml`
-  `inputs`/`outputs`, `action.yml` `runs.env`, the script, and the `README.md`
-  Inputs/Outputs tables.
+- To add or rename an input or output, change all 5 places: `action.yml`
+  `inputs`/`outputs`, `action.yml` `runs.env`, the script, the `README.md`
+  Inputs/Outputs tables, and the lists in `tests/unit/test_action_setup.py`.
 
 ## Constraints
 
@@ -102,28 +103,41 @@ pytest job uses a random org, so it runs in parallel.
 
 ## Testing
 
-- `tests/test_register_json_schemas.py` has two classes. The tests do not mock
-  anything. Set inputs with `monkeypatch.setenv`/`delenv`. The module imports
-  the script by putting `src/` on `sys.path`.
-  - `TestRegisterJsonSchemas`: integration tests that call `main()` against the
-    real Synapse. They need a valid `SYNAPSE_AUTH_TOKEN`.
-  - `TestInputChecks`: tests for the input checks and the login error. They do
-    not use the Synapse fixtures and do not need a token
-    (`python -m pytest tests -k TestInputChecks`).
+- The tests are in two files. They do not mock anything. Set inputs with
+  `monkeypatch.setenv`/`delenv`. Each file imports the script by putting `src/`
+  on `sys.path`. The two files must have different names, because the test
+  directories have no `__init__.py`.
+  - `tests/integration/test_register_json_schemas.py`: the class
+    `TestRegisterJsonSchemas` calls `main()` against the real Synapse. These
+    tests need a valid `SYNAPSE_AUTH_TOKEN`.
+  - `tests/unit/test_input_checks.py`: one class for each function in the
+    script. `TestInputChecks` tests the input checks of `main()` and the login
+    error. The other classes are `Test<FunctionName>` (for example
+    `TestWriteGithubOutput`). If you add a function to the script, add a class
+    for it. These tests do not use the Synapse fixtures and do not need a token
+    (`python -m pytest tests/unit`). `TestRegisterSchema` uses only files that
+    fail before the call to Synapse. The organization check of
+    `connect_to_synapse()` needs a valid login, so only the integration tests
+    test it.
+- `tests/unit/test_action_setup.py` checks only `action.yml`: the inputs, the
+  defaults, the `uris` output and the `runs.env` mapping. It does not import the
+  script and does not need a token.
 - A module-scoped fixture makes a random org (`test.org.id<8 hex>`) and deletes
   its schemas and the org at the end. All `TestRegisterJsonSchemas` tests share
   it, so two tests must not register the same schema name and version.
 - The tests do not depend on the current directory. Fixture directories use
-  `TESTS_DIR` (`Path(__file__).parent`). The `GITHUB_OUTPUT` file and the empty
-  directory are in `tmp_path`. Expected error text that has a path must use the
-  same `TESTS_DIR` path, because `main()` prints the path that it gets.
+  `DATA_DIR` (`Path(__file__).parents[1] / "data"`). The `GITHUB_OUTPUT` file
+  and the empty directory are in `tmp_path`. Expected error text that has a path
+  must use the same `DATA_DIR` path, because `main()` prints the path that it
+  gets.
 - `test_non_json` and `test_malformed_json` check exact synapseclient and
   Synapse error text. They can break when the base image version changes. Run
   the tests before you merge a Dependabot `FROM` update.
-- Fixture dirs: `schema_dir` (2 valid schemas), `schema_dir_invalid_names` (`-`
-  and `_` names for `FIX_SCHEMA_NAME`), `non_schema_dir` (not JSON),
-  `malformed_schema_dir` (JSON that Synapse rejects). `data_model.csv` is the
-  input for the CI `generate-jsonschema` job, not for pytest.
+- Fixture dirs in `tests/data/`: `schema_dir` (2 valid schemas),
+  `schema_dir_invalid_names` (`-` and `_` names for `FIX_SCHEMA_NAME`),
+  `non_schema_dir` (not JSON), `malformed_schema_dir` (JSON that Synapse
+  rejects). `data_model.csv` is the input for the CI `generate-jsonschema` job,
+  not for pytest.
 - `tests/check_uris.sh` is for CI, not for pytest. The `test-action` and
   `test-workflow` jobs call it with the expected URI count and the org. It reads
   the `uris` output from the `URIS` env var. If you add or remove a fixture

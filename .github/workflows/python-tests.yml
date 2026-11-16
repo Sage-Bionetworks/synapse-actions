@@ -2,6 +2,14 @@ name: Python Tests
 
 # Shared pytest job for the action CI workflows. The synapseclient version
 # comes from the FROM line of the Dockerfile in the action directory.
+#
+# A new action can use this workflow if the action directory has:
+#   - a Dockerfile whose first FROM line is
+#     ghcr.io/sage-bionetworks/synapsepythonclient:vX.Y.Z@sha256:<digest>
+#   - a requirements.txt file (test-only dependencies)
+#   - pytest tests in test-path (relative to the action directory)
+# The python-version input must match the Python version in the base image.
+
 on:
   workflow_call:
     inputs:

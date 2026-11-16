@@ -1,9 +1,9 @@
 """Unit tests for the generate-jsonschema GitHub Action configuration.
 
-These tests check that action.yml declares the inputs and outputs, maps each
-input to an environment variable. The CI
-action run does not find a lost input, because an empty value uses the default.
-Tests of main() are in test_main.py.
+These tests check that action.yml declares the inputs and outputs, and maps
+each input to an environment variable. The CI action run does not find a lost
+optional input, because an empty value uses the default.
+Tests of main() are in test_action_functions.py.
 """
 
 from pathlib import Path

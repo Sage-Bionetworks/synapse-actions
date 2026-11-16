@@ -91,26 +91,27 @@ pytest job uses a random org, so it runs in parallel.
   the "Registration Summary", writes the `uris` of the schemas that registered
   to `GITHUB_OUTPUT`, and returns 1 if one or more files failed (DPE-1790).
   `test_non_json` and `test_malformed_json` check the summary and the output.
-- Do NOT move `syn.login()` above the input checks (`ORG_NAME`, `SCHEMA_DIR`,
-  directory exists, `*.json` files present). These checks run before the login,
-  so a missing input gives its own error and not a login error. The
-  `TestInputChecks` tests remove `SYNAPSE_AUTH_TOKEN` and fail if the login runs
-  first.
-- Do NOT change `syn.login(authToken=synapse_pat)` back to `syn.login()`.
-  synapseclient reads `~/.synapseConfig` before the `SYNAPSE_AUTH_TOKEN` env
-  var. Thus, without the argument, a local config file hides the action input,
-  and `TestInputChecks.test_invalid_token` passes the login.
+- Do NOT move the call to `connect_to_synapse()` (the login and the organization
+  check) above the input checks in `main()` (`ORG_NAME`, `SCHEMA_DIR`, directory
+  exists, `*.json` files present). These checks run before the login, so a
+  missing input gives its own error and not a login error. The `TestInputChecks`
+  tests remove `SYNAPSE_AUTH_TOKEN` and fail if the login runs first.
+- Do NOT change `syn.login(authToken=synapse_pat)` in `connect_to_synapse()`
+  back to `syn.login()`. synapseclient reads `~/.synapseConfig` before the
+  `SYNAPSE_AUTH_TOKEN` env var. Thus, without the argument, a local config file
+  hides the action input, and `TestInputChecks.test_invalid_token` passes the
+  login.
 
 ## Testing
 
-- The tests are in two files. They do not mock anything. Set inputs with
-  `monkeypatch.setenv`/`delenv`. Each file imports the script by putting `src/`
-  on `sys.path`. The two files must have different names, because the test
-  directories have no `__init__.py`.
+- The tests of the script are in two files. They do not mock anything. Set
+  inputs with `monkeypatch.setenv`/`delenv`. Each file imports the script by
+  putting `src/` on `sys.path`. All test files must have different names,
+  because the test directories have no `__init__.py`.
   - `tests/integration/test_register_json_schemas.py`: the class
     `TestRegisterJsonSchemas` calls `main()` against the real Synapse. These
     tests need a valid `SYNAPSE_AUTH_TOKEN`.
-  - `tests/unit/test_input_checks.py`: one class for each function in the
+  - `tests/unit/test_action_functions.py`: one class for each function in the
     script. `TestInputChecks` tests the input checks of `main()` and the login
     error. The other classes are `Test<FunctionName>` (for example
     `TestWriteGithubOutput`). If you add a function to the script, add a class

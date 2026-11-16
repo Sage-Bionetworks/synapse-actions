@@ -37,23 +37,26 @@ build, and a run of the local action (`uses: ./generate-jsonschema`) on
 - **Inputs:** `action.yml` `inputs` → `runs.env` (`DATA_MODEL_SOURCE`,
   `DATA_TYPES`, `DATA_MODEL_LABELS`, `OUTPUT_DIRECTORY`) → `os.environ` in
   `main()`. The script reads only env vars, not CLI args.
-- **Input rules in `main()`:** If `DATA_TYPES` is not set or empty, it becomes
-  `None`. If it has only whitespace and commas, it becomes `[]`. synapseclient
-  makes all types for the two values (`TestMain.test_with_empty_data_type`). A
+- **Input rules:** `main()` reads the env vars and gives them to helper
+  functions. `parse_data_types()`: if `DATA_TYPES` is not set or empty, it
+  becomes `None`. If it has only whitespace and commas, it becomes `[]`.
+  synapseclient makes all types for the two values
+  (`TestMain.test_with_empty_data_type`). `validate_data_model_source()`: a
   source that starts with `http://`/`https://` has no file-exists check. An
-  empty `DATA_MODEL_LABELS` value becomes `class_label`. Other values that are
-  not `class_label` or `display_label` give `::error::` and return 1
+  empty `DATA_MODEL_LABELS` value becomes `class_label`.
+  `validate_data_model_labels()`: other values that are not `class_label` or
+  `display_label` give `::error::`, and `main()` returns 1
   (`TestMain.test_invalid_labels`). An empty `OUTPUT_DIRECTORY` value becomes
   `schemas` (`TestMain.test_with_empty_output_directory`). Use
   `os.environ.get(KEY) or default` for these inputs, not
   `os.environ.get(KEY, default)`, because `action.yml` always sets the env var.
 - **Outputs** go to `$GITHUB_OUTPUT`: `schemas` is a path relative to the
   workspace (`os.path.relpath` of `OUTPUT_DIRECTORY`), or the absolute path if
-  `OUTPUT_DIRECTORY` is absolute. Do not write the container path
-  (`/github/workspace/...`), because it does not exist on the runner host.
-  `schemas-json` is `json.dumps` of the schema list, written as a multiline
-  heredoc with the delimiter `EOF`. Users parse `schemas-json` (see the
-  `README.md` PR-comment example), so do not change its shape.
+  `OUTPUT_DIRECTORY` is absolute (`resolve_output_path()`). Do not write the
+  container path (`/github/workspace/...`), because it does not exist on the
+  runner host. `schemas-json` is `json.dumps` of the schema list, written as a
+  multiline heredoc with the delimiter `EOF`. Users parse `schemas-json` (see
+  the `README.md` PR-comment example), so do not change its shape.
 - **Test fixture `tests/data_model.csv`:** 3 template rows (`IsTemplate=TRUE`:
   Datatype1–3), each with one required property. The tests hardcode the counts
   (`TOTAL_SCHEMAS_IN_TEST_MODEL = 3`, "generated 1/2/3 schema(s)"). If you

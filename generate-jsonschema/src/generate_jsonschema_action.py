@@ -6,12 +6,13 @@ import os
 import sys
 import traceback
 from pathlib import Path
+from typing import Any
 
 from synapseclient import Synapse
 from synapseclient.extensions.curator import generate_jsonschema
 
 
-def write_github_output(output_dir, schemas):
+def write_github_output(output_dir: str, schemas: list[dict[str, Any]]) -> None:
     """
     Write the action outputs to the GITHUB_OUTPUT file, if it is set.
 
@@ -32,7 +33,7 @@ def write_github_output(output_dir, schemas):
         f.write("\nEOF\n")
 
 
-def main():
+def main() -> int:
     """
     Main function to generate JSON schemas from data models.
 
@@ -63,7 +64,7 @@ def main():
 
     # Parse data_types: empty string means all types (None)
     data_types_str = os.environ.get("DATA_TYPES", None)
-    data_types = (
+    data_types: list[str] | None = (
         [dt.strip() for dt in data_types_str.split(",") if dt.strip()]
         if data_types_str
         else None

@@ -81,12 +81,11 @@ build, and a run of the local action (`uses: ./generate-jsonschema`) on
   `8cc401a` in the old `Sage-Bionetworks-Actions/generate-jsonschema` repository
   restored an `output-directory` input that was lost from `action.yml` in a
   linter fix.)
-- `tests/test_action_setup.py` does string checks on the source: the script must
-  contain `from synapseclient import Synapse`,
-  `from synapseclient.extensions.curator import generate_jsonschema`,
-  `def main():`, and `if __name__ == "__main__":`. The `README.md` must contain
-  `# Generate JSON Schema Action`, `data-model-source`, and `schemas-json`. If
-  you refactor imports or rename the title, the tests fail.
+- `tests/test_action_setup.py` checks only `action.yml` and `README.md`. The
+  `README.md` must contain `# Generate JSON Schema Action`, `data-model-source`,
+  and `schemas-json`. If you rename the title, the tests fail. Do not add checks
+  for the `Dockerfile` or the script source here. The Docker CI jobs and
+  `test_integration.py` already find those problems.
 
 ## Constraints
 

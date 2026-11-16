@@ -39,12 +39,12 @@ build, and a run of the local action (`uses: ./generate-jsonschema`) on
   `main()`. The script reads only env vars, not CLI args.
 - **Input rules in `main()`:** If `DATA_TYPES` is not set or empty, it becomes
   `None`. If it has only whitespace and commas, it becomes `[]`. synapseclient
-  makes all types for the two values (`test_main_with_empty_data_type`). A
+  makes all types for the two values (`TestMain.test_with_empty_data_type`). A
   source that starts with `http://`/`https://` has no file-exists check. An
   empty `DATA_MODEL_LABELS` value becomes `class_label`. Other values that are
   not `class_label` or `display_label` give `::error::` and return 1
-  (`test_main_invalid_labels`). An empty `OUTPUT_DIRECTORY` value becomes
-  `schemas` (`test_main_with_empty_output_directory`). Use
+  (`TestMain.test_invalid_labels`). An empty `OUTPUT_DIRECTORY` value becomes
+  `schemas` (`TestMain.test_with_empty_output_directory`). Use
   `os.environ.get(KEY) or default` for these inputs, not
   `os.environ.get(KEY, default)`, because `action.yml` always sets the env var.
 - **Outputs** go to `$GITHUB_OUTPUT`: `schemas` is a path relative to the
@@ -77,15 +77,14 @@ build, and a run of the local action (`uses: ./generate-jsonschema`) on
 
 - To add or rename an input or output, change all 5 places: `action.yml`
   `inputs`/`outputs`, `action.yml` `runs.env`, the script, the `README.md`
-  Inputs/Outputs tables, and the lists in `tests/test_action_setup.py`. (Revert
-  `8cc401a` in the old `Sage-Bionetworks-Actions/generate-jsonschema` repository
-  restored an `output-directory` input that was lost from `action.yml` in a
-  linter fix.)
-- `tests/test_action_setup.py` checks only `action.yml` and `README.md`. The
-  `README.md` must contain `# Generate JSON Schema Action`, `data-model-source`,
-  and `schemas-json`. If you rename the title, the tests fail. Do not add checks
-  for the `Dockerfile` or the script source here. The Docker CI jobs and
-  `test_integration.py` already find those problems.
+  Inputs/Outputs tables, and the lists in `tests/unit/test_action_setup.py`.
+  (Revert `8cc401a` in the old `Sage-Bionetworks-Actions/generate-jsonschema`
+  repository restored an `output-directory` input that was lost from
+  `action.yml` in a linter fix.)
+- `tests/unit/test_action_setup.py` checks only `action.yml`. Do not add checks
+  for the `Dockerfile` or the script source here. The Docker CI jobs and the
+  `TestMain` class in `tests/unit/test_action_functions.py` already find those
+  problems.
 
 ## Constraints
 
@@ -97,10 +96,16 @@ build, and a run of the local action (`uses: ./generate-jsonschema`) on
 
 ## Testing
 
-- `tests/test_integration.py` calls `main()` for real against the installed
-  synapseclient. It does not mock anything. Set inputs with
-  `monkeypatch.setenv`/`delenv`. An autouse fixture does `chdir` to `tmp_path`,
-  so the output goes there.
+- The tests are in `tests/unit/`. The fixture `data_model.csv` stays in `tests/`
+  because CI and the `README.md` use that path.
+  `tests/unit/test_action_functions.py` tests each helper function in one pytest
+  class.
+- The `TestMain` class in `tests/unit/test_action_functions.py` calls `main()`
+  for real against the installed synapseclient. It does not mock anything. Set
+  inputs with `monkeypatch.setenv`/`delenv`. An autouse fixture in the class
+  does `chdir` to `tmp_path`, so the output goes there. The fixture also removes
+  all the input env vars and `GITHUB_OUTPUT`, because the CI runner sets
+  `GITHUB_OUTPUT`.
 - To test a new behavior, add a fixture CSV next to `data_model.csv` (for
   example, for conditionals; the current fixture has none). Do not edit the
   shared fixture, because many tests use its counts.

@@ -3,7 +3,7 @@
 These tests check that action.yml declares the inputs and outputs, maps each
 input to an environment variable. The CI
 action run does not find a lost input, because an empty value uses the default.
-Integration tests of main() are in test_integration.py.
+Tests of main() are in test_main.py.
 """
 
 from pathlib import Path
@@ -15,7 +15,7 @@ import yaml
 @pytest.fixture(scope="module", name="action_file")
 def fixture_action_file() -> Path:
     """Return the path of the action.yml file."""
-    return Path(__file__).parent.parent / "action.yml"
+    return Path(__file__).parents[2] / "action.yml"
 
 
 @pytest.fixture(scope="module", name="action_config")

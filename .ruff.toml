@@ -1,0 +1,13 @@
+# Ruff config for super-linter. See: https://docs.astral.sh/ruff/configuration/
+# Use the black line length, so that "ruff format" and black give the same result.
+
+# Store the cache in a temporary location
+cache-dir = "/tmp/.ruff_cache"
+
+line-length = 88
+
+[lint]
+# flake8 uses "noqa: E402" in the tests. Ruff does not report E402 there, so
+# tell ruff that this code is external. Then RUF100 does not report the noqa.
+external = ["E402"]
+ignore = ["E203"]

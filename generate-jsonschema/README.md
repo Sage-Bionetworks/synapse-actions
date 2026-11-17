@@ -144,7 +144,7 @@ inject code.
 | `data-model-source` | Path or URL to CSV or JSONLD data model file                                     | Yes      | -             |
 | `data-types`        | Comma-separated list of data types to generate schemas for (leave empty for all) | No       | `''`          |
 | `data-model-labels` | Label type to use: `class_label` or `display_label`                              | No       | `class_label` |
-| `output-directory`  | Directory to output generated schema files                                       | No       | `schemas`     |
+| `output-directory`  | Directory to output generated schema files. Must be in the workspace             | No       | `schemas`     |
 
 ### About `data-model-labels`
 
@@ -155,10 +155,10 @@ inject code.
 
 ## Outputs
 
-| Output         | Description                                                                                                                                   |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `schemas`      | Path to directory containing generated schema files, relative to the workspace (e.g., `schemas`). Absolute if `output-directory` is absolute. |
-| `schemas-json` | JSON string containing array of generated schema dictionaries for use with PR comment actions or other downstream processing                  |
+| Output         | Description                                                                                                                  |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `schemas`      | Path to directory containing generated schema files, relative to the workspace (e.g., `schemas`)                             |
+| `schemas-json` | JSON string containing array of generated schema dictionaries for use with PR comment actions or other downstream processing |
 
 ## Local Development and Testing
 

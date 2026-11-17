@@ -38,11 +38,13 @@ def main() -> int:
     if not validate_data_model_labels(data_model_labels):
         return 1
 
-    # Create output directory relative to current working directory
-    # This ensures it's created in the GitHub workspace where artifacts can be uploaded
+    # The output directory must be in the workspace (the current working
+    # directory), because only the workspace is mounted from the runner host.
     # An empty value (input set to '') uses the default
     output_dir_name = os.environ.get("OUTPUT_DIRECTORY") or "schemas"
-    output_dir = os.path.join(os.getcwd(), output_dir_name)
+    output_dir = validate_output_directory(output_dir_name)
+    if output_dir is None:
+        return 1
     os.makedirs(output_dir, exist_ok=True)
 
     print_header(data_model_source, data_types, data_model_labels, output_dir)
@@ -56,7 +58,7 @@ def main() -> int:
             output=output_dir,
             data_model_labels=data_model_labels,
         )
-        write_github_output(resolve_output_path(output_dir_name, output_dir), schemas)
+        write_github_output(resolve_output_path(output_dir), schemas)
         print_summary(file_paths)
         return 0
 
@@ -130,7 +132,34 @@ def validate_data_model_labels(data_model_labels: str) -> bool:
     return False
 
 
-def resolve_output_path(output_dir_name: str, output_dir: str) -> str:
+def validate_output_directory(output_dir_name: str) -> str | None:
+    """
+    Resolve the output directory, and check that it is in the workspace.
+
+    The workspace is the current working directory. In the container, only the
+    workspace is mounted from the runner host. Files written to a different
+    location are lost when the container stops.
+
+    Args:
+        output_dir_name: The OUTPUT_DIRECTORY value (relative or absolute)
+
+    Returns:
+        The resolved absolute path of the output directory. None (after an
+        error message) if the path is not in the workspace.
+    """
+    workspace = Path.cwd().resolve()
+    output_dir = (workspace / output_dir_name).resolve()
+    if output_dir.is_relative_to(workspace):
+        return str(output_dir)
+    print(
+        f"::error::OUTPUT_DIRECTORY '{output_dir_name}' is not in the workspace "
+        f"({workspace}). Use a path in the workspace, for example 'schemas'",
+        file=sys.stderr,
+    )
+    return None
+
+
+def resolve_output_path(output_dir: str) -> str:
     """
     Get the path to write as the schemas output.
 
@@ -138,16 +167,12 @@ def resolve_output_path(output_dir_name: str, output_dir: str) -> str:
     container (/github/workspace/...) does not exist on the runner host.
 
     Args:
-        output_dir_name: The OUTPUT_DIRECTORY value
-        output_dir: Absolute path of the output directory
+        output_dir: Absolute path of the output directory, in the workspace
 
     Returns:
-        output_dir if output_dir_name is absolute, else the relative path of
-        output_dir from the current working directory.
+        The relative path of output_dir from the current working directory.
     """
-    if os.path.isabs(output_dir_name):
-        return output_dir
-    return os.path.relpath(output_dir)
+    return os.path.relpath(output_dir, Path.cwd().resolve())
 
 
 def print_header(
@@ -181,7 +206,7 @@ def write_github_output(output_dir: str, schemas: list[dict[str, Any]]) -> None:
 
     Args:
         output_dir: Path of the directory with the generated schemas, relative to
-            the workspace (or absolute if OUTPUT_DIRECTORY is absolute)
+            the workspace
         schemas: List of the generated JSON schemas
     """
     github_output = os.environ.get("GITHUB_OUTPUT")

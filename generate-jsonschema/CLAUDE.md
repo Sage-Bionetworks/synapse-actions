@@ -51,12 +51,15 @@ build, and a run of the local action (`uses: ./generate-jsonschema`) on
   `os.environ.get(KEY) or default` for these inputs, not
   `os.environ.get(KEY, default)`, because `action.yml` always sets the env var.
 - **Outputs** go to `$GITHUB_OUTPUT`: `schemas` is a path relative to the
-  workspace (`os.path.relpath` of `OUTPUT_DIRECTORY`), or the absolute path if
-  `OUTPUT_DIRECTORY` is absolute (`resolve_output_path()`). Do not write the
-  container path (`/github/workspace/...`), because it does not exist on the
-  runner host. `schemas-json` is `json.dumps` of the schema list, written as a
-  multiline heredoc with the delimiter `EOF`. Users parse `schemas-json` (see
-  the `README.md` PR-comment example), so do not change its shape.
+  workspace (`resolve_output_path()`), also if `OUTPUT_DIRECTORY` is absolute.
+  Do not write the container path (`/github/workspace/...`), because it does
+  not exist on the runner host. `validate_output_directory()` resolves
+  `OUTPUT_DIRECTORY` and gives `::error::` if the result is not in the
+  workspace (for example `../schemas` or `/tmp/schemas`). Only the workspace is
+  mounted from the runner, so files in other locations are lost.
+  `schemas-json` is `json.dumps` of the schema list, written as a multiline
+  heredoc with the delimiter `EOF`. Users parse `schemas-json` (see the
+  `README.md` PR-comment example), so do not change its shape.
 - **Test fixture `tests/data_model.csv`:** 3 template rows (`IsTemplate=TRUE`:
   Datatype1–3), each with one required property. The tests hardcode the counts
   (`TOTAL_SCHEMAS_IN_TEST_MODEL = 3`, "generated 1/2/3 schema(s)"). If you

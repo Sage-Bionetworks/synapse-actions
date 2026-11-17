@@ -17,6 +17,7 @@ from generate_jsonschema_action import (  # noqa: E402 # pylint: disable=wrong-i
     resolve_output_path,
     validate_data_model_labels,
     validate_data_model_source,
+    validate_output_directory,
     write_github_output,
 )
 
@@ -168,47 +169,102 @@ class TestValidateDataModelLabels:
         assert "Use 'class_label' or 'display_label'" in captured.err
 
 
+class TestValidateOutputDirectory:
+    """Tests for validate_output_directory."""
+
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [
+            ("schemas", "schemas"),
+            ("./out/schemas/", "out/schemas"),
+            ("out/../schemas", "schemas"),
+            (".", ""),
+        ],
+    )
+    def test_in_workspace(
+        self,
+        value: str,
+        expected: str,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test that a relative path in the workspace gives the resolved path."""
+        # GIVEN a working directory
+        monkeypatch.chdir(tmp_path)
+
+        # WHEN I validate an output directory in the workspace
+        result = validate_output_directory(value)
+
+        # THEN the result is the resolved absolute path in the workspace
+        assert result == str((tmp_path / expected).resolve())
+
+    def test_absolute_in_workspace(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that an absolute path in the workspace is valid."""
+        # GIVEN a working directory
+        monkeypatch.chdir(tmp_path)
+        # AND an absolute output directory in the workspace
+        value = str(tmp_path.resolve() / "schemas")
+
+        # WHEN I validate the output directory
+        result = validate_output_directory(value)
+
+        # THEN the result is the same absolute path
+        assert result == value
+
+    @pytest.mark.parametrize("value", ["../schemas", "out/../../schemas", "/tmp/x"])
+    def test_outside_workspace(
+        self,
+        value: str,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """Test that a path outside the workspace gives an error."""
+        # GIVEN a working directory
+        monkeypatch.chdir(tmp_path)
+
+        # WHEN I validate an output directory outside the workspace
+        result = validate_output_directory(value)
+        captured = capsys.readouterr()
+
+        # THEN the result is None
+        assert result is None
+        # AND an error with the value goes to stderr
+        assert f"::error::OUTPUT_DIRECTORY '{value}' is not in the workspace" in (
+            captured.err
+        )
+
+
 class TestResolveOutputPath:
     """Tests for resolve_output_path."""
 
     def test_relative(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Test that a relative OUTPUT_DIRECTORY gives a relative output path."""
-        # GIVEN a relative output directory name in the working directory
+        """Test that the output path is relative to the working directory."""
+        # GIVEN an output directory in the working directory
         monkeypatch.chdir(tmp_path)
-        output_dir = os.path.join(os.getcwd(), "schemas")
+        output_dir = str(tmp_path.resolve() / "schemas")
 
         # WHEN I resolve the output path
-        result = resolve_output_path("schemas", output_dir)
+        result = resolve_output_path(output_dir)
 
         # THEN the result is relative to the working directory
-        assert result == "schemas", "Relative input should give a relative path"
+        assert result == "schemas", "The output path should be relative"
 
     def test_nested_relative(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Test that a nested relative OUTPUT_DIRECTORY keeps its subdirectories."""
-        # GIVEN a nested relative output directory name
+        """Test that a nested output directory keeps its subdirectories."""
+        # GIVEN a nested output directory in the working directory
         monkeypatch.chdir(tmp_path)
-        output_dir = os.path.join(os.getcwd(), "out", "schemas")
+        output_dir = str(tmp_path.resolve() / "out" / "schemas")
 
         # WHEN I resolve the output path
-        result = resolve_output_path(os.path.join("out", "schemas"), output_dir)
+        result = resolve_output_path(output_dir)
 
         # THEN the result is the nested relative path
         assert result == os.path.join("out", "schemas")
-
-    def test_absolute(self, tmp_path: Path) -> None:
-        """Test that an absolute OUTPUT_DIRECTORY gives the absolute output path."""
-        # GIVEN an absolute output directory name
-        output_dir_name = str(tmp_path / "out" / ".." / "schemas")
-        # AND the absolute path of the output directory
-        output_dir = str(tmp_path / "schemas")
-
-        # WHEN I resolve the output path
-        result = resolve_output_path(output_dir_name, output_dir)
-
-        # THEN the result is the absolute path
-        assert result == output_dir, "Absolute input should give the absolute path"
 
 
 class TestPrintHeader:
@@ -544,6 +600,54 @@ class TestMain:
         schema_count = len(list((tmp_path / "schemas").glob("*.json")))
         assert schema_count == TOTAL_SCHEMAS_IN_TEST_MODEL
         assert not list(tmp_path.glob("*.json")), "No schemas should be in the root"
+
+    @pytest.mark.parametrize("value", ["../schemas", "/tmp/schemas"])
+    def test_output_directory_outside_workspace(
+        self,
+        value: str,
+        tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test that main fails when OUTPUT_DIRECTORY is outside the workspace."""
+        # GIVEN a valid data model
+        # AND a GITHUB_OUTPUT file
+        # AND an OUTPUT_DIRECTORY outside the workspace
+        output_file = tmp_path / "github_output.txt"
+        monkeypatch.setenv("GITHUB_OUTPUT", str(output_file))
+        monkeypatch.setenv("OUTPUT_DIRECTORY", value)
+        monkeypatch.setenv("DATA_MODEL_SOURCE", str(DATA_MODEL_PATH))
+
+        # WHEN I generate the schemas
+        res = main()
+        captured = capsys.readouterr()
+
+        # THEN it fails with an output directory error
+        assert res == 1
+        assert f"::error::OUTPUT_DIRECTORY '{value}' is not in the workspace" in (
+            captured.err
+        )
+        # AND no outputs are written
+        assert not output_file.exists()
+
+    def test_github_output_absolute_in_workspace(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that an absolute OUTPUT_DIRECTORY gives a relative schemas output."""
+        # GIVEN a valid data model
+        # AND a GITHUB_OUTPUT file
+        # AND an absolute OUTPUT_DIRECTORY in the workspace
+        output_file = tmp_path / "github_output.txt"
+        monkeypatch.setenv("GITHUB_OUTPUT", str(output_file))
+        monkeypatch.setenv("OUTPUT_DIRECTORY", str(tmp_path.resolve() / "schemas"))
+        monkeypatch.setenv("DATA_MODEL_SOURCE", str(DATA_MODEL_PATH))
+
+        # WHEN I generate the schemas
+        res = main()
+
+        # THEN the schemas output is the path relative to the workspace
+        assert res == 0
+        assert "schemas=schemas\n" in output_file.read_text()
 
     def test_with_output_directory(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

@@ -101,10 +101,10 @@ class TestValidateDataModelSource:
 class TestParseDataTypes:
     """Tests for parse_data_types."""
 
-    @pytest.mark.parametrize("value", [None, ""])
+    @pytest.mark.parametrize("value", [None, "", "   "])
     def test_not_set(self, value: str | None) -> None:
-        """Test that an unset or empty DATA_TYPES value gives None (all types)."""
-        # GIVEN an unset or empty DATA_TYPES value
+        """Test that an unset, empty or whitespace DATA_TYPES value gives None."""
+        # GIVEN an unset, empty or whitespace-only DATA_TYPES value
 
         # WHEN I parse it
         result = parse_data_types(value)
@@ -112,10 +112,10 @@ class TestParseDataTypes:
         # THEN the result is None
         assert result is None, "Unset or empty value should give None"
 
-    @pytest.mark.parametrize("value", [",", " , ,", "   "])
+    @pytest.mark.parametrize("value", [",", " , ,"])
     def test_only_separators(self, value: str) -> None:
         """Test that a value with only whitespace and commas gives an empty list."""
-        # GIVEN a DATA_TYPES value with only whitespace and commas
+        # GIVEN a DATA_TYPES value with commas and no data type names
 
         # WHEN I parse it
         result = parse_data_types(value)
@@ -457,6 +457,30 @@ class TestMain:
         # THEN a schema is generated for each of the 3 data types
         assert res == 0, "Main function should return 0 when DATA_TYPES is empty"
         assert "::notice::Successfully generated 3 schema(s)" in captured.out
+
+    @pytest.mark.parametrize("value", [",", " , ,"])
+    def test_with_only_commas_data_types(
+        self,
+        value: str,
+        capsys: pytest.CaptureFixture[str],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test that main fails when DATA_TYPES has commas and no names."""
+        # GIVEN a valid data model
+        # AND DATA_TYPES that has commas and no data type names
+        monkeypatch.setenv("DATA_MODEL_SOURCE", str(DATA_MODEL_PATH))
+        monkeypatch.setenv("DATA_TYPES", value)
+
+        # WHEN I generate the schemas
+        res = main()
+        captured = capsys.readouterr()
+
+        # THEN it fails with a no valid data type names error
+        assert res == 1, "Main should return 1 when DATA_TYPES has no names"
+        expected = f"::error::DATA_TYPES has no valid data type names: '{value}'"
+        assert expected in captured.err
+        # AND no schemas are generated
+        assert not Path("schemas").exists(), "No output directory should be made"
 
     def test_with_no_data_types(
         self, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch

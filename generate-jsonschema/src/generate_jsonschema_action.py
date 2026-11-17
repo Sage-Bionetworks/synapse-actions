@@ -32,6 +32,13 @@ def main() -> int:
         return 1
 
     data_types = parse_data_types(os.environ.get("DATA_TYPES"))
+    if data_types == []:
+        print(
+            "::error::DATA_TYPES has no valid data type names: "
+            f"'{os.environ.get('DATA_TYPES')}'",
+            file=sys.stderr,
+        )
+        return 1
 
     # An empty value (input set to '') uses the default
     data_model_labels = os.environ.get("DATA_MODEL_LABELS") or "class_label"
@@ -103,11 +110,11 @@ def parse_data_types(data_types_str: str | None) -> list[str] | None:
         data_types_str: Comma-separated list of data types
 
     Returns:
-        None if the value is not set or empty (all types). Otherwise the list of
-        stripped, non-empty data types. This list is empty if the value has only
-        whitespace and commas.
+        None if the value is not set, empty or only whitespace (all types).
+        Otherwise the list of stripped, non-empty data types. This list is empty
+        if the value has only whitespace and commas.
     """
-    if not data_types_str:
+    if not data_types_str or not data_types_str.strip():
         return None
     return [dt.strip() for dt in data_types_str.split(",") if dt.strip()]
 

@@ -38,10 +38,13 @@ build, and a run of the local action (`uses: ./generate-jsonschema`) on
   `DATA_TYPES`, `DATA_MODEL_LABELS`, `OUTPUT_DIRECTORY`) → `os.environ` in
   `main()`. The script reads only env vars, not CLI args.
 - **Input rules:** `main()` reads the env vars and gives them to helper
-  functions. `parse_data_types()`: if `DATA_TYPES` is not set or empty, it
-  becomes `None`. If it has only whitespace and commas, it becomes `[]`.
-  synapseclient makes all types for the two values
-  (`TestMain.test_with_empty_data_type`). `validate_data_model_source()`: a
+  functions. `parse_data_types()`: if `DATA_TYPES` is not set, empty or only
+  whitespace, it becomes `None` (all types,
+  `TestMain.test_with_empty_data_type`). If it has commas and no names (for
+  example `" , ,"`), it becomes `[]`. Then `main()` gives `::error::` and
+  returns 1 (`TestMain.test_with_only_commas_data_types`). Do not give `[]` to
+  synapseclient, because its meaning is not documented.
+  `validate_data_model_source()`: a
   source that starts with `http://`/`https://` has no file-exists check. An
   empty `DATA_MODEL_LABELS` value becomes `class_label`.
   `validate_data_model_labels()`: other values that are not `class_label` or

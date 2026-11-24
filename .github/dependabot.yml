@@ -1,0 +1,23 @@
+version: 2
+updates:
+  - package-ecosystem: docker
+    directories:
+      - /generate-jsonschema
+      - /register-jsonschema
+    schedule:
+      interval: weekly
+    groups:
+      docker-minor:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions-minor:
+        update-types:
+          - minor
+          - patch

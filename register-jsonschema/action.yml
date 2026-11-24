@@ -1,0 +1,40 @@
+name: Register JSON Schema
+description: Register JSON Schema files with Synapse using the Synapse Python client.
+author: Sage Bionetworks
+
+branding:
+  icon: file-text
+  color: blue
+
+inputs:
+  org-name:
+    description: 'Name of the Synapse organization to register schemas in'
+    required: true
+  schema-dir:
+    description: 'Path to directory containing JSON schema files'
+    required: true
+  version:
+    description: 'Semantic version of the schemas being registered'
+    required: false
+    default: ''
+  synapse-auth-token:
+    description: 'Synapse Personal Access Token with permissions to register schemas in the Synapse organization'
+    required: true
+  fix-schema-name:
+    description: 'If true, fixes the schema name to meet Synapse requirements by replacing dashes and underscores with periods. Defaults to false'
+    required: false
+    default: 'false'
+
+outputs:
+  uris:
+    description: 'URIs of registered schemas'
+
+runs:
+  using: docker
+  image: Dockerfile
+  env:
+    ORG_NAME: ${{ inputs.org-name }}
+    VERSION: ${{ inputs.version }}
+    SCHEMA_DIR: ${{ inputs.schema-dir }}
+    SYNAPSE_AUTH_TOKEN: ${{ inputs.synapse-auth-token }}
+    FIX_SCHEMA_NAME: ${{ inputs.fix-schema-name }}

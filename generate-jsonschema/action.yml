@@ -1,0 +1,39 @@
+name: Generate JSON Schema
+description: Parse Data Models (CSV/JSONLD) and generate JSON Schema files for Synapse
+author: Sage Bionetworks
+
+branding:
+  icon: file-text
+  color: blue
+
+inputs:
+  data-model-source:
+    description: 'Path or URL to CSV or JSONLD data model file'
+    required: true
+  data-types:
+    description: 'Comma-separated list of data types to generate schemas for (leave empty for all)'
+    required: false
+    default: ''
+  data-model-labels:
+    description: 'Label type to use: class_label or display_label'
+    required: false
+    default: 'class_label'
+  output-directory:
+    description: 'Directory to output generated schema files'
+    required: false
+    default: 'schemas'
+
+outputs:
+  schemas:
+    description: 'Path to directory containing generated schema files'
+  schemas-json:
+    description: 'JSON string containing array of generated schema dictionaries for use with PR comment actions'
+
+runs:
+  using: docker
+  image: Dockerfile
+  env:
+    DATA_MODEL_SOURCE: ${{ inputs.data-model-source }}
+    DATA_TYPES: ${{ inputs.data-types }}
+    DATA_MODEL_LABELS: ${{ inputs.data-model-labels }}
+    OUTPUT_DIRECTORY: ${{ inputs.output-directory }}

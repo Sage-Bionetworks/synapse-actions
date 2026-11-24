@@ -1,0 +1,102 @@
+name: Register JSON Schema CI
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths: &ci-paths
+      - register-jsonschema/**
+      - generate-jsonschema/**
+      - .github/workflows/register-jsonschema-ci.yml
+      - .github/workflows/python-tests.yml
+      - shared/**
+  push:
+    branches:
+      - main
+    paths: *ci-paths
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: register-jsonschema
+
+jobs:
+
+  test-code:
+    name: Tests
+    uses: ./.github/workflows/python-tests.yml
+    with:
+      action-directory: register-jsonschema
+      synapseclient-extras: curator
+      test-path: tests
+    secrets:
+      SYNAPSE_AUTH_TOKEN: ${{ secrets.SYNAPSE_AUTH_TOKEN }}
+
+
+  # This job registers schemas in a temporary Synapse org for each run
+  # attempt, so runs do not share state and can run at the same time. The
+  # last step deletes the org. All steps are in one job, so a re-run of the
+  # job makes a new org.
+  test-register:
+    name: GitHub Action and Workflow Tests
+    runs-on: ubuntu-latest
+    env:
+      # Parts must start with a letter and have only letters and numbers.
+      ORG_NAME: dpetest.ci.r${{ github.run_id }}a${{ github.run_attempt }}
+
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Create Test Org
+        id: create-org
+        env:
+          SYNAPSE_AUTH_TOKEN: ${{ secrets.SYNAPSE_AUTH_TOKEN }}
+        run: ./tests/ci_org.sh create "$ORG_NAME"
+
+      - name: Test Local Action
+        id: register
+        uses: ./register-jsonschema
+        with:
+          org-name: ${{ env.ORG_NAME }}
+          schema-dir: register-jsonschema/tests/data/schema_dir
+          synapse-auth-token: ${{ secrets.SYNAPSE_AUTH_TOKEN }}
+
+      - name: Check Registered URIs
+        env:
+          URIS: ${{ steps.register.outputs.uris }}
+        run: ./tests/check_uris.sh 2 "$ORG_NAME"
+
+      # The workflow test uses other schema names (Datatype1 to Datatype3)
+      # than the action test, so the two tests can use the same org.
+      - name: Generate JSON Schemas
+        id: generate
+        uses: ./generate-jsonschema
+        with:
+          data-model-source: ./register-jsonschema/tests/data/data_model.csv
+          data-model-labels: "display_label"
+
+      - name: Register JSON Schemas
+        id: register-generated
+        uses: ./register-jsonschema
+        with:
+          org-name: ${{ env.ORG_NAME }}
+          fix-schema-name: "true"
+          schema-dir: ${{ steps.generate.outputs.schemas }}
+          synapse-auth-token: ${{ secrets.SYNAPSE_AUTH_TOKEN }}
+
+      - name: Check Generated URIs
+        env:
+          URIS: ${{ steps.register-generated.outputs.uris }}
+        run: ./tests/check_uris.sh 3 "$ORG_NAME"
+
+      # Run also when a step fails or the run is cancelled, so the org and its
+      # schemas do not stay in Synapse.
+      - name: Delete Test Org
+        if: ${{ always() && steps.create-org.outcome == 'success' }}
+        env:
+          SYNAPSE_AUTH_TOKEN: ${{ secrets.SYNAPSE_AUTH_TOKEN }}
+        run: ./tests/ci_org.sh delete "$ORG_NAME"

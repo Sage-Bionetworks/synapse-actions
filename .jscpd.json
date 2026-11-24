@@ -1,0 +1,12 @@
+{
+  "threshold": 0,
+  "reporters": ["consoleFull"],
+  "ignore": [
+    "**/__snapshots__/**",
+    "**/node_modules/**",
+    "**/test/**/*.csv",
+    "**/tests/**/*.csv",
+    "**/tests/**/*.json"
+  ],
+  "absolute": true
+}

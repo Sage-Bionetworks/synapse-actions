@@ -1,0 +1,7 @@
+Attribute,Description,Valid Values,DependsOn,Required,Validation Rules,IsTemplate,Parent
+Datatype1,,,Property1,,,TRUE,
+Property1,,,,TRUE,,,
+Datatype2,,,Property2,,,TRUE,
+Property2,,,,TRUE,,,
+Datatype3,,,Property3,,,TRUE,
+Property3,,,,TRUE,,,

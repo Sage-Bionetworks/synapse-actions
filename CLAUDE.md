@@ -67,6 +67,11 @@ For tests, Docker build and Docker run of each action, see the module
 
 ## Conventions
 
+- Action logic is the code that runs when a workflow calls an action (read
+  inputs, call synapseclient, write outputs). Put it only in Python, in
+  `<action>/src/`. Do not add an `entrypoint.sh` or a shell step in
+  `action.yml`. CI `run:` steps in `.github/workflows/` are not action logic,
+  so shell is permitted there.
 - Release: one `vX.Y.Z` tag for the full repository, and a floating `v1` major
   tag that moves to each new 1.x release. A tag versions all actions together.
   Thus a breaking change in one action needs a new major tag for all actions.

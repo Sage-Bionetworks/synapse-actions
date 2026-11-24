@@ -22,7 +22,7 @@ defaults:
     working-directory: generate-jsonschema
 
 jobs:
-  test:
+  test-code:
     name: Tests
     uses: ./.github/workflows/python-tests.yml
     with:

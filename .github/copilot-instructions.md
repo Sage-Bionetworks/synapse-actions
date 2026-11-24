@@ -1,7 +1,7 @@
 # Copilot Instructions
 
-This repository is a monorepo of Docker container GitHub Actions for Synapse
-JSON Schema management. Each action is a Python script that runs in a Docker
+This repository is a monorepo of Docker container GitHub Actions for Synapse.
+Each action is a Python script that runs in a Docker
 image based on `ghcr.io/sage-bionetworks/synapsepythonclient`. The actions do
 not use an `entrypoint.sh` script.
 

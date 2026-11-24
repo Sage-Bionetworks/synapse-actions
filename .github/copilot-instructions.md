@@ -34,10 +34,10 @@ the code.
 
 - Write the action logic in the Python script in `<action>/src/`. The action
   logic is the code that runs when a workflow calls the action: it reads the
-  inputs, calls synapseclient, and writes the outputs. Do not add a shell
-  script (for example `entrypoint.sh`) or shell steps in `action.yml` for this
-  logic. Shell commands in the `run:` steps of `.github/workflows/*.yml` are
-  not action logic, and they are permitted.
+  inputs, calls synapseclient, and writes the outputs. Do not add a shell script
+  (for example `entrypoint.sh`) or shell steps in `action.yml` for this logic.
+  Shell commands in the `run:` steps of `.github/workflows/*.yml` are not action
+  logic, and they are permitted.
 - Use built-in types (`list`, `dict`, `tuple`) in type annotations, not the
   `typing` aliases.
 - Make sure that black and ruff format give the same result. The line length

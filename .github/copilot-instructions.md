@@ -94,12 +94,9 @@ When you create a pull request (PR), make sure that:
 - The `README.md` of the changed action shows changes to its functionality or
   usage.
 
-The body of the PR must include:
+The body of the PR must use the `Problem`, `Solution` and `Testing` sections of
+`.github/pull_request_template.md`. Also:
 
-- A summary of the changes
-- A special note of changes to dependencies or to the base image
-- A link to the related issues or discussions
-- Other context that helps the reviewers
 
 ## Code Review Guidelines
 

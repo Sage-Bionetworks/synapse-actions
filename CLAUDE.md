@@ -71,6 +71,9 @@ For tests, Docker build and Docker run of each action, see the module
   tag that moves to each new 1.x release. A tag versions all actions together.
   Thus a breaking change in one action needs a new major tag for all actions.
   The `README.md` examples use `@v1`.
+- PR body: use the `Problem`, `Solution` and `Testing` sections of
+  `.github/pull_request_template.md`. Put the JIRA issue in the title or in
+  `Problem`, and tell about dependency or base image changes in `Solution`.
 - To add a new action (for example the LinkML action in ADM-8603), change all of
   these:
   - a new top-level directory with `action.yml`, `Dockerfile`, `src/`, tests,

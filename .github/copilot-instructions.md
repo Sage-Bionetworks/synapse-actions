@@ -59,8 +59,8 @@ the code.
   this image.
 - Do not add `pip install` to a `Dockerfile`. The CI reads the synapseclient
   version from the `FROM` line.
-- When the base image changes the Python version, update the `python-version`
-  input in `<action>-ci.yml` by hand. Dependabot does not change it.
+- Do not set a Python version in the CI workflows. `python-tests.yml` gets it
+  from the base image in the `FROM` line.
 
 ## Workflows
 

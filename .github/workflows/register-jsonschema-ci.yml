@@ -29,8 +29,6 @@ jobs:
     uses: ./.github/workflows/python-tests.yml
     with:
       action-directory: register-jsonschema
-      # Must match the Python version in the Dockerfile base image.
-      python-version: "3.15"
       synapseclient-extras: curator
       test-path: tests
     secrets:

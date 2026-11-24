@@ -99,8 +99,8 @@ build, and a run of the local action (`uses: ./generate-jsonschema`) on
 ## Constraints
 
 - For the base image rules (`FROM` tag, digest, release tags, no `pip install`,
-  `python-version` in `generate-jsonschema-ci.yml`), see "Constraints" in the
-  root `CLAUDE.md`.
+  Python version from the base image), see "Constraints" in the root
+  `CLAUDE.md`.
 - Create `Synapse()` with no login. Schema generation does not need auth, and
   the action has no token input (SYNPY-1762).
 

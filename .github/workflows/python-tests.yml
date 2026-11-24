@@ -8,17 +8,13 @@ name: Python Tests
 #     ghcr.io/sage-bionetworks/synapsepythonclient:vX.Y.Z@sha256:<digest>
 #   - a requirements.txt file (test-only dependencies)
 #   - pytest tests in test-path (relative to the action directory)
-# The python-version input must match the Python version in the base image.
+# The Python version for the tests comes from the base image.
 
 on:
   workflow_call:
     inputs:
       action-directory:
         description: Action directory, for example generate-jsonschema
-        required: true
-        type: string
-      python-version:
-        description: Must match the Python version in the base image
         required: true
         type: string
       synapseclient-extras:
@@ -44,8 +40,6 @@ jobs:
     defaults:
       run:
         working-directory: ${{ inputs.action-directory }}
-    env:
-      PYTHON_VERSION: ${{ inputs.python-version }}
 
     steps:
       - name: Checkout
@@ -74,24 +68,18 @@ jobs:
           echo "BASE_IMAGE=$BASE_IMAGE" >> "$GITHUB_ENV"
           echo "SYN_VERSION=$SYN_VERSION" >> "$GITHUB_ENV"
 
-      - name: Check Python version matches base image
-        env:
-          CALLER_WORKFLOW: ${{ github.workflow }}
+      - name: Read Python version from base image
         run: |
+          # BASE_IMAGE comes from the "Read base image" step
           IMAGE_PY=$(docker run --rm --entrypoint python "$BASE_IMAGE" \
             -c 'import sys; print("%d.%d" % sys.version_info[:2])')
-          echo "Base image Python: $IMAGE_PY, CI Python: $PYTHON_VERSION"
-          if [ "$IMAGE_PY" != "$PYTHON_VERSION" ]; then
-            echo "::error::CI python-version ($PYTHON_VERSION) does not" \
-              "match the base image Python ($IMAGE_PY). Update" \
-              "python-version in the '$CALLER_WORKFLOW' workflow."
-            exit 1
-          fi
+          echo "Base image Python: $IMAGE_PY"
+          echo "IMAGE_PY=$IMAGE_PY" >> "$GITHUB_ENV"
 
       - name: Setup Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
-          python-version: ${{ inputs.python-version }}
+          python-version: ${{ env.IMAGE_PY }}
 
       - name: Install dependencies
         env:

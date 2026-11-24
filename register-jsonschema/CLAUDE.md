@@ -81,8 +81,8 @@ Synapse with the `SYNAPSE_AUTH_TOKEN` secret.
 ## Constraints
 
 - For the base image rules (`FROM` tag, digest, release tags, no `pip install`,
-  `python-version` in `register-jsonschema-ci.yml`), see "Constraints" in the
-  root `CLAUDE.md`.
+  Python version from the base image), see "Constraints" in the root
+  `CLAUDE.md`.
 
 ## Antipatterns — Do NOT
 

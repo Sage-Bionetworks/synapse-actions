@@ -46,8 +46,8 @@ For tests, Docker build and Docker run of each action, see the module
   (for example `uses: ./generate-jsonschema`, `context: generate-jsonschema`).
 - **Shared test job:** the `Tests` job of each CI workflow calls the reusable
   workflow `python-tests.yml` with the inputs `action-directory`,
-  `python-version`, `synapseclient-extras` and `test-path`. It reads the `FROM`
-  line and checks the Python version. Change these shared rules in
+  `synapseclient-extras` and `test-path`. It reads the `FROM` line and gets the
+  Python version from the base image. Change these shared rules in
   `python-tests.yml`, not in the caller workflows. Do not copy the test steps
   back into a caller, because jscpd fails on the copy.
 - **Shared test helper:** `shared/action_yml_checks.py` has the `action_file`
@@ -106,11 +106,11 @@ For tests, Docker build and Docker run of each action, see the module
   tag and the digest together. The `python-tests.yml` step "Read base image from
   Dockerfile" fails if the `FROM` line is not
   `...synapsepythonclient:vX.Y.Z@sha256:<digest>`.
-- When the base image changes the Python version, update the `python-version`
-  input in `<action>-ci.yml` by hand (Dependabot does not change it). The step
-  "Check Python version matches base image" fails until the two values are the
-  same. Do not write the current Python or synapseclient version in a
-  `CLAUDE.md` file. Refer to the `Dockerfile` `FROM` tag.
+- Do not set a Python version in the CI workflows. The `python-tests.yml` step
+  "Read Python version from base image" gets it from the `FROM` image, so a
+  Dependabot base image update needs no manual change. Do not write the current
+  Python or synapseclient version in a `CLAUDE.md` file. Refer to the
+  `Dockerfile` `FROM` tag.
 - Do not change the CI Synapse orgs to a production org. The register CI jobs
   really register schemas. Each run attempt makes its own temporary org
   (`dpetest.ci.r<run_id>a<attempt>`) and deletes it at the end (see

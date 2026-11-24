@@ -72,7 +72,7 @@ For tests, Docker build and Docker run of each action, see the module
   Thus a breaking change in one action needs a new major tag for all actions.
   The `README.md` examples use `@v1`.
 - PR body: use the `Problem`, `Solution` and `Testing` sections of
-  `.github/pull_request_template.md`. Put the JIRA issue in the title or in
+  `.github/pull_request_template.md`. Put the Jira issue in the title or in
   `Problem`, and tell about dependency or base image changes in `Solution`.
 - To add a new action (for example the LinkML action in ADM-8603), change all of
   these:

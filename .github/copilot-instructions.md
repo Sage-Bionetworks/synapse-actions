@@ -1,9 +1,9 @@
 # Copilot Instructions
 
 This repository is a monorepo of Docker container GitHub Actions for Synapse.
-Each action is a Python script that runs in a Docker
-image based on `ghcr.io/sage-bionetworks/synapsepythonclient`. The actions do
-not use an `entrypoint.sh` script.
+Each action is a Python script that runs in a Docker image based on
+`ghcr.io/sage-bionetworks/synapsepythonclient`. The actions do not use an
+`entrypoint.sh` script.
 
 ## Repository Structure
 
@@ -95,8 +95,8 @@ When you create a pull request (PR), make sure that:
   usage.
 
 The body of the PR must use the `Problem`, `Solution` and `Testing` sections of
-`.github/pull_request_template.md`. Also:
-
+`.github/pull_request_template.md`. Put the Jira issue in the title or in
+`Problem`, and tell about dependency or base image changes in `Solution`.
 
 ## Code Review Guidelines
 

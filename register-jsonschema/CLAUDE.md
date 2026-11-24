@@ -31,14 +31,22 @@ docker run --rm -v $(pwd)/tests/data/schema_dir:/schema_dir -e ORG_NAME=dpetest 
 ```
 
 Run these commands from `register-jsonschema/`. CI
-(`.github/workflows/register-jsonschema-ci.yml`) has 3 jobs: pytest, a run of
-the local action (`uses: ./register-jsonschema`), and a full workflow with
-`uses: ./generate-jsonschema` followed by `uses: ./register-jsonschema`. All 3
-jobs call the real Synapse with the `SYNAPSE_AUTH_TOKEN` secret. The 2 jobs
-that register in the org `dpetest` run in sequence (`test-action`, then
-`test-workflow`). The pytest job uses a random org, so it runs in parallel.
-There is no separate `docker run` job, because `test-action` builds and runs
-the same image.
+(`.github/workflows/register-jsonschema-ci.yml`) has 2 jobs. Both call the real
+Synapse with the `SYNAPSE_AUTH_TOKEN` secret.
+
+- `test-code` runs pytest. The pytest fixture makes its own random org.
+- `test-register` runs the local action (`uses: ./register-jsonschema`), then a
+  full workflow (`uses: ./generate-jsonschema`, then
+  `uses: ./register-jsonschema`). There is no separate `docker run` job, because
+  this job builds and runs the same image.
+- `test-register` first makes a temporary org for the run attempt
+  (`dpetest.ci.r<run_id>a<attempt>`). Its last step (`if: always()`) deletes the
+  schemas and the org. All these steps are in one job, so "Re-run failed jobs"
+  makes a new org. In a separate setup job, a re-run gets the output of the
+  first attempt, whose org is already deleted.
+- `tests/ci_org.sh create|delete <org-name>` runs `tests/ci_org.py` in the base
+  image from the `FROM` line, so there is no second synapseclient pin.
+- Runs do not share an org, so the workflow has no `concurrency` group.
 
 ## Data Models
 
@@ -78,12 +86,15 @@ the same image.
 
 ## Antipatterns — Do NOT
 
-- Do NOT remove the workflow `concurrency` group (`register-jsonschema-dpetest`,
-  `cancel-in-progress: false`) or the `needs:` chain in
-  `register-jsonschema-ci.yml`. All runs register schemas in the shared org
-  `dpetest`, so two runs at the same time can make each other fail. GitHub keeps
-  only one pending run in the group. A newer pending run cancels the older
-  pending run, but not the run that is in progress.
+- Do NOT use a fixed org name in `test-register`. Use `$ORG_NAME` (or
+  `${{ env.ORG_NAME }}` in `with:`). A shared org makes two runs at the same
+  time fail on the same schema.
+- Do NOT give the action test and the workflow test the same schema names. They
+  register in the same org. Now they use `Biospecimen` and `Patient`
+  (`schema_dir`) and `Datatype1` to `Datatype3` (`data_model.csv`).
+- Do NOT move the org create or delete steps to a separate job, and do NOT
+  remove `if: always()` from the delete step. Without them, a failed or
+  cancelled run leaves its org in Synapse, or a re-run uses a deleted org.
 - Do NOT expect a re-run with the same `VERSION` to pass. Synapse cannot
   overwrite a registered schema version, so each schema that registered before
   fails on the re-run.
@@ -142,11 +153,13 @@ the same image.
   `non_schema_dir` (not JSON), `malformed_schema_dir` (JSON that Synapse
   rejects). `data_model.csv` is the input for the CI `generate-jsonschema` job,
   not for pytest.
-- `tests/check_uris.sh` is for CI, not for pytest. The `test-action` and
-  `test-workflow` jobs call it with the expected URI count and the org. It reads
-  the `uris` output from the `URIS` env var. If you add or remove a fixture
-  schema or a data type in `data_model.csv`, change the count in
-  `register-jsonschema-ci.yml`.
+- `tests/check_uris.sh`, `tests/ci_org.sh` and `tests/ci_org.py` are for CI, not
+  for pytest. pytest does not collect `ci_org.py`, because its name does not
+  start with `test_`.
+- `tests/check_uris.sh`: the `test-register` job calls it 2 times, with the
+  expected URI count and the org. It reads the `uris` output from the `URIS` env
+  var. If you add or remove a fixture schema or a data type in `data_model.csv`,
+  change the count in `register-jsonschema-ci.yml`.
 
 ## Related Systems
 

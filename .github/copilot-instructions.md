@@ -68,10 +68,12 @@ the code.
   tag in a comment, for example `uses: owner/action@<sha> # v1.2.3`.
 - Change the shared test steps in `python-tests.yml`, not in the caller
   workflows.
-- Do not change the Synapse org `dpetest` that the CI uses.
-- Do not remove the `concurrency` group or the `needs:` chain in
-  `register-jsonschema-ci.yml`. They make sure that only one job registers
-  schemas in `dpetest` at a time.
+- Do not change the CI Synapse orgs to a production org. Each run attempt of
+  `register-jsonschema-ci.yml` makes its own temporary org in the
+  `test-register` job. Use `$ORG_NAME`, not a fixed org name.
+- Keep the org create and delete steps in the `test-register` job, and keep
+  `if: always()` on the delete step. The step deletes the temporary org and its
+  schemas also when a run fails.
 - Do not put secret values in workflows. Use
   `${{ secrets.SYNAPSE_AUTH_TOKEN }}`.
 - Do not format the workflow files or `action.yml` files with Prettier. Use the

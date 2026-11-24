@@ -60,7 +60,7 @@ For tests, Docker build and Docker run of each action, see the module
   The `push` filter uses the YAML anchor of the `pull_request` filter
   (`paths: *ci-paths`), because jscpd fails on two lists that are the same.
 - **Cross-action CI:** `register-jsonschema-ci.yml` also runs on changes to
-  `generate-jsonschema/**`. Its `test-workflow` job runs the local
+  `generate-jsonschema/**`. Its `test-register` job runs the local
   `./generate-jsonschema` and gives its `schemas` output to
   `./register-jsonschema`. A change to the generate output can break the
   register CI.
@@ -108,9 +108,10 @@ For tests, Docker build and Docker run of each action, see the module
   "Check Python version matches base image" fails until the two values are the
   same. Do not write the current Python or synapseclient version in a
   `CLAUDE.md` file. Refer to the `Dockerfile` `FROM` tag.
-- Do not change the CI Synapse org `dpetest` to a production org. The register
-  CI jobs really register schemas in it (see `register-jsonschema/CLAUDE.md` for
-  the concurrency rule).
+- Do not change the CI Synapse orgs to a production org. The register CI jobs
+  really register schemas. Each run attempt makes its own temporary org
+  (`dpetest.ci.r<run_id>a<attempt>`) and deletes it at the end (see
+  `register-jsonschema/CLAUDE.md`).
 - Do not put secret values in workflows. Use
   `${{ secrets.SYNAPSE_AUTH_TOKEN }}`.
 

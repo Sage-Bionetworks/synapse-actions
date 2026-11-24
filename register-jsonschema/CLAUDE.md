@@ -31,13 +31,14 @@ docker run --rm -v $(pwd)/tests/data/schema_dir:/schema_dir -e ORG_NAME=dpetest 
 ```
 
 Run these commands from `register-jsonschema/`. CI
-(`.github/workflows/register-jsonschema-ci.yml`) has 4 jobs: pytest, a Docker
-run, a run of the local action (`uses: ./register-jsonschema`), and a full
-workflow with `uses: ./generate-jsonschema` followed by
-`uses: ./register-jsonschema`. All 4 jobs call the real Synapse with the
-`SYNAPSE_AUTH_TOKEN` secret. The 3 jobs that register in the org `dpetest` run
-in sequence (`test-docker`, then `test-action`, then `test-workflow`). The
-pytest job uses a random org, so it runs in parallel.
+(`.github/workflows/register-jsonschema-ci.yml`) has 3 jobs: pytest, a run of
+the local action (`uses: ./register-jsonschema`), and a full workflow with
+`uses: ./generate-jsonschema` followed by `uses: ./register-jsonschema`. All 3
+jobs call the real Synapse with the `SYNAPSE_AUTH_TOKEN` secret. The 2 jobs
+that register in the org `dpetest` run in sequence (`test-action`, then
+`test-workflow`). The pytest job uses a random org, so it runs in parallel.
+There is no separate `docker run` job, because `test-action` builds and runs
+the same image.
 
 ## Data Models
 
